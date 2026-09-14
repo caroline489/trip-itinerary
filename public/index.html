@@ -59,10 +59,10 @@
     background: linear-gradient(135deg, var(--teal-deep), var(--teal));
     color:#F7F2E7; border-radius: var(--radius); padding:20px; text-align:center;
   }
-  .next-card .eyebrow{ font-size:20px; font-weight:800; letter-spacing:0.01em; }
-  .next-card .label{ font-family:var(--font-serif); font-size:19px; margin:6px 0 14px; }
+  .next-card .eyebrow{ font-size:28px; font-weight:800; letter-spacing:0.01em; color: var(--gold); }
+  .next-card .label{ font-family:var(--font-serif); font-size:19px; margin:8px 0 14px; color:#F7F2E7; font-weight:500; }
   .countdown{ display:flex; justify-content:center; gap:18px; }
-  .countdown .num{ font-family:var(--font-mono); font-size:34px; font-weight:600; }
+  .countdown .num{ font-family:var(--font-mono); font-size:34px; font-weight:600; color:#D9F2EC; }
   .countdown .unit{ font-size:11px; opacity:0.8; }
   .next-card .localtime{ margin-top:12px; font-size:12px; opacity:0.8; }
 
@@ -75,9 +75,8 @@
   .city-en{ font-size:8.5px; fill: var(--ink-soft); }
 
   /* ---------- Calendar ---------- */
-  .cal-wrap{ display:flex; gap:14px; flex-wrap:wrap; padding:14px 8px 4px; }
-  .cal-month{ flex:1 1 220px; min-width:210px; }
-  .cal-month-title{ font-family:var(--font-serif); font-weight:700; font-size:14px; color:var(--teal-deep); margin-bottom:6px; }
+  .cal-wrap{ padding:14px 8px 4px; }
+  .cal-month-title{ font-family:var(--font-serif); font-weight:700; font-size:14px; color:var(--teal-deep); margin-bottom:8px; }
   .cal-week-row, .cal-days{ display:grid; grid-template-columns: repeat(7,1fr); gap:3px; }
   .cal-week-row span{ font-size:10px; color:var(--ink-soft); text-align:center; padding-bottom:2px; }
   .cal-cell{
@@ -594,29 +593,26 @@
   };
   function buildCalendar(){
     const weekLabels = ['日','一','二','三','四','五','六'];
-    const months = [{y:2026,m:9},{y:2026,m:10}];
-    let html = '';
-    months.forEach(({y,m}) => {
-      const startWeekday = new Date(y, m-1, 1).getDay();
-      const daysInMonth = new Date(y, m, 0).getDate();
-      html += `<div class="cal-month"><div class="cal-month-title">${y}年${m}月</div>
-        <div class="cal-week-row">${weekLabels.map(d=>`<span>${d}</span>`).join('')}</div>
-        <div class="cal-days">`;
-      for(let i=0;i<startWeekday;i++) html += `<div class="cal-cell empty"></div>`;
-      for(let d=1; d<=daysInMonth; d++){
-        const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const night = nightsMap[dateStr];
-        if(night === 'transit'){
-          html += `<div class="cal-cell cal-transit"><span class="cal-daynum">${d}</span>✈️</div>`;
-        } else if(night){
-          html += `<div class="cal-cell" style="background:color-mix(in srgb, ${CITY_COLOR[night]} 22%, var(--paper-raised)); border-color:${CITY_COLOR[night]}">
-            <span class="cal-daynum">${d}</span><span class="cal-city-dot" style="background:${CITY_COLOR[night]}"></span></div>`;
-        } else {
-          html += `<div class="cal-cell"><span class="cal-daynum">${d}</span></div>`;
-        }
+    const start = new Date(2026, 8, 20); // 9/20（周日）
+    const end = new Date(2026, 9, 10);   // 10/10（周六）
+    let html = `<div class="cal-month-title">2026年9月20日 – 10月10日</div>
+      <div class="cal-week-row">${weekLabels.map(d=>`<span>${d}</span>`).join('')}</div>
+      <div class="cal-days">`;
+    for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
+      const y = d.getFullYear(), m = d.getMonth()+1, day = d.getDate();
+      const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const night = nightsMap[dateStr];
+      const dayLabel = day === 1 ? `${m}/${day}` : day; // 每月1号标出月份避免歧义
+      if(night === 'transit'){
+        html += `<div class="cal-cell cal-transit"><span class="cal-daynum">${dayLabel}</span>✈️</div>`;
+      } else if(night){
+        html += `<div class="cal-cell" style="background:color-mix(in srgb, ${CITY_COLOR[night]} 22%, var(--paper-raised)); border-color:${CITY_COLOR[night]}">
+          <span class="cal-daynum">${dayLabel}</span><span class="cal-city-dot" style="background:${CITY_COLOR[night]}"></span></div>`;
+      } else {
+        html += `<div class="cal-cell"><span class="cal-daynum">${dayLabel}</span></div>`;
       }
-      html += `</div></div>`;
-    });
+    }
+    html += `</div>`;
     $('calMount').innerHTML = html;
   }
 
