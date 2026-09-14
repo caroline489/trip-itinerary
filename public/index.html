@@ -139,6 +139,7 @@
   }
   .note-input:focus{ border-color:var(--gold); border-style:solid; color:var(--ink); }
   .note-input:not(:placeholder-shown){ border-style:solid; }
+  .todo-note-input{ margin-left:29px; width:calc(100% - 29px); margin-bottom:8px; }
   .est-note{ font-size:11px; color:var(--ink-soft); margin-top:6px; }
   .overnight-note{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); }
 
@@ -723,20 +724,23 @@
     mount.innerHTML = '';
     todo.forEach(t => {
       const state = todoState[t.target];
+      const isDone = state && state.done;
       const li = document.createElement('li');
-      li.className = 'todo-li' + (state && state.done ? ' done' : '');
+      li.className = 'todo-li' + (isDone ? ' done' : '');
       li.innerHTML = `
         <label class="todo-row">
-          <input type="checkbox" class="todo-check" ${state && state.done ? 'checked' : ''}>
+          <input type="checkbox" class="todo-check" ${isDone ? 'checked' : ''}>
           <span class="todo-text">
-            ${t.hot && !(state&&state.done) ? '<span class="urgent">⚠ ' : ''}${t.name}${t.hot && !(state&&state.done) ? '</span>' : ''}${t.hot && !(state&&state.done) ? '<span class="tag hot">尽快</span>' : ''}
-            <br><span class="todo-note">${state && state.done ? `已订：${state.info}` : t.note}${t.url && !(state&&state.done) ? ` · <a href="${t.url}" target="_blank" rel="noopener">官方订票 ↗</a>` : ''}</span>
+            ${t.hot && !isDone ? '<span class="urgent">⚠ ' : ''}${t.name}${t.hot && !isDone ? '</span>' : ''}${t.hot && !isDone ? '<span class="tag hot">尽快</span>' : ''}
+            <br><span class="todo-note">${isDone ? `已订：${state.info}` : t.note}${t.url && !isDone ? ` · <a href="${t.url}" target="_blank" rel="noopener">官方订票 ↗</a>` : ''}</span>
           </span>
-        </label>`;
+        </label>
+        ${!isDone ? `<input type="text" class="note-input todo-note-input" data-note-id="${t.target}" placeholder="记一下可预订时间…" value="${escapeAttr(notesState[t.target] || '')}">` : ''}`;
       const cb = li.querySelector('.todo-check');
       cb.addEventListener('change', () => onTodoCheck(t, cb));
       mount.appendChild(li);
     });
+    wireNoteInputs(mount);
   }
 
   /* ================= 待办状态：Worker + KV 共享同步 ================= */
