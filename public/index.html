@@ -21,8 +21,8 @@
     --radius: 12px;
     --shadow: 0 1px 0 rgba(42,36,32,0.06);
     --tap: 44px;
-    --font-serif: Georgia, 'Iowan Old Style', 'Noto Serif', 'PingFang TC', serif;
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', Roboto, Helvetica, Arial, sans-serif;
+    --font-serif: 'Seravek', ui-rounded, -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Seravek', ui-rounded, -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
     /* 每段行程一个颜色，用于地图路线与当日城市标签 */
     --c0:#B5651D; --c1:#3F6E8C; --c2:#6B8E4E; --c3:#A85B7C;
@@ -59,7 +59,7 @@
     background: linear-gradient(135deg, var(--teal-deep), var(--teal));
     color:#F7F2E7; border-radius: var(--radius); padding:20px; text-align:center;
   }
-  .next-card .eyebrow{ font-size:12.5px; opacity:0.85; }
+  .next-card .eyebrow{ font-size:20px; font-weight:800; letter-spacing:0.01em; }
   .next-card .label{ font-family:var(--font-serif); font-size:19px; margin:6px 0 14px; }
   .countdown{ display:flex; justify-content:center; gap:18px; }
   .countdown .num{ font-family:var(--font-mono); font-size:34px; font-weight:600; }
@@ -73,6 +73,22 @@
   .map-legend .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
   .city-label{ font-family: var(--font-sans); font-size:11px; fill: var(--ink); }
   .city-en{ font-size:8.5px; fill: var(--ink-soft); }
+
+  /* ---------- Calendar ---------- */
+  .cal-wrap{ display:flex; gap:14px; flex-wrap:wrap; padding:14px 8px 4px; }
+  .cal-month{ flex:1 1 220px; min-width:210px; }
+  .cal-month-title{ font-family:var(--font-serif); font-weight:700; font-size:14px; color:var(--teal-deep); margin-bottom:6px; }
+  .cal-week-row, .cal-days{ display:grid; grid-template-columns: repeat(7,1fr); gap:3px; }
+  .cal-week-row span{ font-size:10px; color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+  .cal-cell{
+    aspect-ratio:1; border-radius:6px; border:1px solid var(--line-soft);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-size:11px; color:var(--ink); position:relative; gap:2px;
+  }
+  .cal-cell.empty{ border:none; }
+  .cal-cell.cal-transit{ background: repeating-linear-gradient(45deg, var(--line-soft), var(--line-soft) 3px, var(--paper-raised) 3px, var(--paper-raised) 6px); }
+  .cal-daynum{ font-family:var(--font-mono); font-size:10.5px; }
+  .cal-city-dot{ width:6px; height:6px; border-radius:50%; }
 
   /* ---------- Confirmed bookings ---------- */
   .booking-item{ border-left:3px solid var(--line); padding:8px 0 8px 12px; margin-bottom:6px; }
@@ -139,12 +155,13 @@
 
   <div class="top-nav">
     <h1 style="font-size:24px;">西班牙 · 葡萄牙 15 天</h1>
+    <a href="https://travel-ledger.caroline-8f6.workers.dev" target="_blank" rel="noopener">→ 记账本</a>
   </div>
   <div style="color:var(--ink-soft); font-size:13px; margin-bottom:18px;">2026/09/22 – 2026/10/08　Wendy &amp; Caro</div>
 
   <!-- What's next -->
   <div class="next-card">
-    <div class="eyebrow">距离下一件事</div>
+    <div class="eyebrow">Up next</div>
     <div class="label" id="nextLabel">加载中…</div>
     <div class="countdown" id="countdown">
       <div><div class="num" id="cd-d">–</div><div class="unit">天</div></div>
@@ -160,6 +177,7 @@
     <div class="card map-card">
       <div id="mapMount"></div>
       <div class="map-legend" id="mapLegend"></div>
+      <div class="cal-wrap" id="calMount"></div>
     </div>
   </section>
 
@@ -305,13 +323,15 @@
   // tz: 西班牙/葡萄牙段用 '+02:00'（葡萄牙其实是 +01:00，已在各城市标注时区）
   const days = [
     { id:'d1', date:'2026-09-22', wd:'周二', city:'马德里 Madrid', color:CITY_COLOR.madrid,
+      warn:'红眼航班+14.5小时飞行，抵达时几乎一夜没睡，建议第一天不排正式景点，让身体先适应',
       items:[
         {t:'00:45', label:'CX315 香港 → 马德里 起飞'},
         {t:'09:15', label:'抵达马德里机场 T4S'},
-        {t:'约10:00', est:true, label:'包车接机 → 酒店'},
-        {t:'下午', est:true, label:'酒店 check-in，自由活动、调整时差'}
+        {t:'约10:00', est:true, label:'包车接机 → 酒店（若未到 15:00 标准入住时间，可先寄存行李）'},
+        {t:'午后', est:true, label:`轻松适应：${placeLink('圣米盖尔市场 (Mercado de San Miguel)',{q:'Mercado de San Miguel Madrid'})} 简单吃点东西，${placeLink('马德里主广场 (Plaza Mayor)',{q:'Plaza Mayor Madrid'})} 短暂散步`},
+        {t:'傍晚', est:true, label:'尽量早点回酒店休息补眠，为第二天正式观光留体力'}
       ],
-      overnight:'Ocean Drive Madrid', stops:[{q:'Adolfo Suárez Madrid–Barajas Airport'},{q:'Ocean Drive Madrid, Plaza de Isabel II 7'}] },
+      overnight:'Ocean Drive Madrid', stops:[{q:'Adolfo Suárez Madrid–Barajas Airport'},{q:'Ocean Drive Madrid, Plaza de Isabel II 7'},{q:'Mercado de San Miguel Madrid'},{q:'Plaza Mayor Madrid'}] },
 
     { id:'d2', date:'2026-09-23', wd:'周三', city:'马德里 Madrid', color:CITY_COLOR.madrid,
       items:[
@@ -519,27 +539,29 @@
 
   /* ================= 待办清单 ================= */
   const todo = [
-    { name:'莱罗书店 Livraria Lello（波尔图）', hot:true, note:'游客极多，常提前1个月售罄，务必尽早订' },
-    { name:'佩纳宫 Pena Palace（辛特拉）', hot:true, note:'分时段入场，周末常额满' },
-    { name:'塞维利亚王宫 Real Alcázar de Sevilla', hot:true, note:'分时段票常提前数日售罄' },
-    { name:'奎尔公园 Park Güell（巴塞罗那）', hot:true, note:'付费区强制预约，现场不卖票' },
-    { name:'巴特罗之家 Casa Batlló（巴塞罗那）', hot:true, note:'热门度极高，建议尽快订' },
-    { name:'马德里王宫 Royal Palace of Madrid', note:'旺季建议线上购票' },
-    { name:'托莱多大教堂 / 城堡', note:'建议线上购票避免排队' },
-    { name:'塞哥维亚城堡 Alcázar of Segovia', note:'塔楼登顶名额有限' },
-    { name:'萨拉曼卡大学', note:'限流参观，建议提前' },
-    { name:'波尔图证券交易所宫 Palácio da Bolsa', note:'仅可跟随导览参观，建议先订场次' },
-    { name:'热罗尼姆修道院 / 贝伦塔（里斯本）', note:'建议提前线上购票' },
-    { name:'塞维利亚大教堂 + 希拉尔达塔', note:'旺季当日票常售罄' },
-    { name:'米拉之家 Casa Milà（巴塞罗那）', note:'建议提前，比巴特罗之家稍宽松' },
-    { name:'波尔图酒窖品酒 Sandeman Cellars', note:'还在考虑中，待确定' },
-    { name:'弗拉门戈表演（塞维利亚）', note:'还在考虑中，待确定' },
-    { name:'加泰罗尼亚国家艺术博物馆 MNAC（巴塞罗那）', note:'还在考虑中，待确定' },
+    { name:'莱罗书店 Livraria Lello（波尔图）', hot:true, note:'游客极多，常提前1个月售罄，务必尽早订', url:'https://www.livrarialello.pt/' },
+    { name:'佩纳宫 Pena Palace（辛特拉）', hot:true, note:'分时段入场，周末常额满', url:'https://www.parquesdesintra.pt/' },
+    { name:'塞维利亚王宫 Real Alcázar de Sevilla', hot:true, note:'分时段票常提前数日售罄', url:'https://www.alcazarsevilla.org/' },
+    { name:'奎尔公园 Park Güell（巴塞罗那）', hot:true, note:'付费区强制预约，现场不卖票', url:'https://parkguell.barcelona/' },
+    { name:'巴特罗之家 Casa Batlló（巴塞罗那）', hot:true, note:'热门度极高，建议尽快订', url:'https://www.casabatllo.es/' },
+    { name:'马德里王宫 Royal Palace of Madrid', note:'旺季建议线上购票', url:'https://www.patrimonionacional.es/visita/palacio-real-de-madrid' },
+    { name:'托莱多大教堂 Toledo Cathedral', note:'建议线上购票避免排队', url:'https://catedralprimada.es/' },
+    { name:'托莱多城堡 Alcázar de Toledo（军事博物馆）', note:'建议线上购票避免排队', url:'https://museo.ejercito.es/' },
+    { name:'塞哥维亚城堡 Alcázar of Segovia', note:'塔楼登顶名额有限', url:'https://www.alcazardesegovia.com/' },
+    { name:'萨拉曼卡大学', note:'限流参观，建议提前', url:'https://www.usal.es/edificio-historico' },
+    { name:'波尔图证券交易所宫 Palácio da Bolsa', note:'仅可跟随导览参观，建议先订场次', url:'https://www.palaciodabolsa.com/' },
+    { name:'热罗尼姆修道院 Jerónimos Monastery（里斯本）', note:'建议提前线上购票', url:'https://www.mosteirojeronimos.gov.pt/' },
+    { name:'贝伦塔 Belém Tower（里斯本）', note:'建议提前线上购票', url:'https://www.torrebelem.gov.pt/' },
+    { name:'塞维利亚大教堂 + 希拉尔达塔', note:'旺季当日票常售罄', url:'https://www.catedraldesevilla.es/' },
+    { name:'米拉之家 Casa Milà（巴塞罗那）', note:'建议提前，比巴特罗之家稍宽松', url:'https://www.lapedrera.com/' },
+    { name:'加泰罗尼亚国家艺术博物馆 MNAC（巴塞罗那）', note:'还在考虑中，待确定', url:'https://www.museunacional.cat/' },
+    { name:'波尔图酒窖品酒 Sandeman Cellars', note:'还在考虑中，待确定', url:'https://www.sandeman.com/visit-us/porto/' },
+    { name:'弗拉门戈表演（塞维利亚）', note:'还在考虑中，场地未定，暂无固定官方链接' },
     { name:'包车服务联系电话', note:'已确认付款，还差司机/客服联系电话，麻烦补充' }
   ];
   function renderTodo(){
     $('todoMount').innerHTML = todo.map(t =>
-      `<li>${t.hot?'<span class="urgent">⚠ ':''}${t.name}${t.hot?'</span>':''}${t.hot?'<span class="tag hot">尽快</span>':''}<br><span style="color:var(--ink-soft); font-size:12.5px;">${t.note}</span></li>`
+      `<li>${t.hot?'<span class="urgent">⚠ ':''}${t.name}${t.hot?'</span>':''}${t.hot?'<span class="tag hot">尽快</span>':''}<br><span style="color:var(--ink-soft); font-size:12.5px;">${t.note}${t.url?` · <a href="${t.url}" target="_blank" rel="noopener">官方订票 ↗</a>`:''}</span></li>`
     ).join('');
   }
 
@@ -558,7 +580,47 @@
     $('tipsMount').innerHTML = tips.map(t => `<li>${t}</li>`).join('');
   }
 
-  /* ================= 手绘风格 SVG 路线图 ================= */
+  /* ================= 住宿日历：每晚颜色标记 ================= */
+  const nightsMap = {
+    '2026-09-22':'madrid', '2026-09-23':'madrid', '2026-09-24':'madrid',
+    '2026-09-25':'salamanca',
+    '2026-09-26':'porto', '2026-09-27':'porto',
+    '2026-09-28':'lisbon', '2026-09-29':'lisbon',
+    '2026-09-30':'faro',
+    '2026-10-01':'sevilla',
+    '2026-10-02':'ronda',
+    '2026-10-03':'barcelona', '2026-10-04':'barcelona', '2026-10-05':'barcelona', '2026-10-06':'barcelona',
+    '2026-10-07':'transit'
+  };
+  function buildCalendar(){
+    const weekLabels = ['日','一','二','三','四','五','六'];
+    const months = [{y:2026,m:9},{y:2026,m:10}];
+    let html = '';
+    months.forEach(({y,m}) => {
+      const startWeekday = new Date(y, m-1, 1).getDay();
+      const daysInMonth = new Date(y, m, 0).getDate();
+      html += `<div class="cal-month"><div class="cal-month-title">${y}年${m}月</div>
+        <div class="cal-week-row">${weekLabels.map(d=>`<span>${d}</span>`).join('')}</div>
+        <div class="cal-days">`;
+      for(let i=0;i<startWeekday;i++) html += `<div class="cal-cell empty"></div>`;
+      for(let d=1; d<=daysInMonth; d++){
+        const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const night = nightsMap[dateStr];
+        if(night === 'transit'){
+          html += `<div class="cal-cell cal-transit"><span class="cal-daynum">${d}</span>✈️</div>`;
+        } else if(night){
+          html += `<div class="cal-cell" style="background:color-mix(in srgb, ${CITY_COLOR[night]} 22%, var(--paper-raised)); border-color:${CITY_COLOR[night]}">
+            <span class="cal-daynum">${d}</span><span class="cal-city-dot" style="background:${CITY_COLOR[night]}"></span></div>`;
+        } else {
+          html += `<div class="cal-cell"><span class="cal-daynum">${d}</span></div>`;
+        }
+      }
+      html += `</div></div>`;
+    });
+    $('calMount').innerHTML = html;
+  }
+
+
   function buildMap(){
     const cities = [
       {key:'madrid', name:'马德里', en:'Madrid', x:485, y:138},
@@ -682,6 +744,7 @@
   renderTodo();
   renderTips();
   buildMap();
+  buildCalendar();
   updateCountdown();
   setInterval(updateCountdown, 30000);
 
