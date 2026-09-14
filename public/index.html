@@ -132,6 +132,13 @@
     display:inline-block; font-size:11px; background: var(--gold); color:#fff;
     border-radius:5px; padding:1px 6px; margin-left:6px; vertical-align:1px;
   }
+  .note-input{
+    display:block; width:100%; margin-top:6px; padding:6px 9px;
+    border:1px dashed var(--line); border-radius:7px; background:var(--paper);
+    color:var(--ink-soft); font-family:var(--font-sans); font-size:12.5px; outline:none;
+  }
+  .note-input:focus{ border-color:var(--gold); border-style:solid; color:var(--ink); }
+  .note-input:not(:placeholder-shown){ border-style:solid; }
   .est-note{ font-size:11px; color:var(--ink-soft); margin-top:6px; }
   .overnight-note{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); }
 
@@ -538,12 +545,31 @@
     if(nav) body += `<a class="day-nav-btn" href="${nav}" target="_blank" rel="noopener">🧭 一键打开当日路线导航</a>`;
     d.items.forEach(it => {
       body += `<div class="timeline-item"><div class="ti-time${it.est?' est':''}">${it.t}</div>
-        <div class="ti-content">${it.label}${it.book?'<span class="book-flag">建议预订</span>':''}</div></div>`;
+        <div class="ti-content">${it.label}${it.book?'<span class="book-flag">建议预订</span>':''}
+        ${it.book && it.id ? `<input type="text" class="note-input" data-note-id="${it.id}" placeholder="记一下可预订时间…" value="${escapeAttr(notesState[it.id] || '')}">` : ''}
+        </div></div>`;
     });
     if(d.overnight && d.overnight !== '—') body += `<div class="overnight-note">🛏 当晚入住：${d.overnight}</div>`;
     const hasEst = d.items.some(it => it.est);
     if(hasEst) body += `<div class="est-note">* 为预估时段，具体以当天实际安排为准</div>`;
     return body;
+  }
+
+  function escapeAttr(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function wireNoteInputs(scopeEl){
+    scopeEl.querySelectorAll('.note-input').forEach(inp => {
+      let t = null;
+      inp.addEventListener('input', () => {
+        const id = inp.dataset.noteId;
+        clearTimeout(t);
+        t = setTimeout(() => {
+          if(inp.value.trim()) notesState[id] = inp.value.trim();
+          else delete notesState[id];
+          queueSaveTodo();
+        }, 400);
+      });
+    });
   }
 
   function renderDays(){
@@ -565,6 +591,7 @@
         </div>
         <div class="day-body">${buildDayBodyHtml(d)}</div>`;
       card.querySelector('.day-head').addEventListener('click', () => card.classList.toggle('open'));
+      wireNoteInputs(card);
       mount.appendChild(card);
     });
     // 默认展开今天或下一个未开始的行程日
@@ -600,6 +627,7 @@
 
   /* ---------------- 待办勾选 → 弹窗问时间 → 更新行程 ---------------- */
   const todoState = {}; // { [target]: { done:true, info:'...', note:'...' } }
+  const notesState = {}; // { [itemId]: '可预订时间备注' } —— 还没订的行程项旁边的自由笔记
   const originalLabels = {}; // 记录每个 id 原始文案，方便取消勾选时还原
 
   function findItemById(id){
@@ -643,6 +671,7 @@
     const card = document.querySelector(`.day-card[data-id="${day.id}"]`);
     if(!card) return;
     card.querySelector('.day-body').innerHTML = buildDayBodyHtml(day);
+    wireNoteInputs(card);
   }
 
   function openConfirmModal(t, checkboxEl){
@@ -712,27 +741,36 @@
 
   /* ================= 待办状态：Worker + KV 共享同步 ================= */
   const TODO_API = '/api/trip-todo';
-  const TODO_LOCAL_KEY = 'trip-todo-state-v1';
+  const TODO_LOCAL_KEY = 'trip-todo-state-v2';
   let todoSaveTimer = null;
+
+  function applyLoadedPayload(payload){
+    if(!payload) return;
+    // 新格式 { todo:{...}, notes:{...} }；兼容旧的纯 todoState 格式
+    const todoPart = payload.todo || payload;
+    const notesPart = payload.notes || {};
+    Object.assign(todoState, todoPart);
+    Object.assign(notesState, notesPart);
+    Object.entries(todoState).forEach(([target, s]) => { if(s.done) applyConfirmed(target, s.info); });
+  }
 
   async function loadTodoState(){
     try{
       const local = localStorage.getItem(TODO_LOCAL_KEY);
-      if(local) Object.assign(todoState, JSON.parse(local));
+      if(local) applyLoadedPayload(JSON.parse(local));
     }catch(err){}
-    Object.entries(todoState).forEach(([target, s]) => { if(s.done) applyConfirmed(target, s.info); });
     renderTodo(); renderBookings();
+    document.querySelectorAll('.day-card').forEach(card => renderDayBody(days.find(d => d.id === card.dataset.id)));
 
     try{
       const res = await fetch(TODO_API, { cache:'no-store' });
       if(res.ok){
         const text = await res.text();
         if(text && text !== '{}'){
-          const remote = JSON.parse(text);
-          Object.assign(todoState, remote);
+          applyLoadedPayload(JSON.parse(text));
           localStorage.setItem(TODO_LOCAL_KEY, text);
-          Object.entries(todoState).forEach(([target, s]) => { if(s.done) applyConfirmed(target, s.info); });
           renderTodo(); renderBookings();
+          document.querySelectorAll('.day-card').forEach(card => renderDayBody(days.find(d => d.id === card.dataset.id)));
         }
       }
     }catch(err){ /* 离线：用本地缓存即可 */ }
@@ -741,7 +779,7 @@
   function queueSaveTodo(){
     clearTimeout(todoSaveTimer);
     todoSaveTimer = setTimeout(async () => {
-      const json = JSON.stringify(todoState);
+      const json = JSON.stringify({ todo: todoState, notes: notesState });
       try{ localStorage.setItem(TODO_LOCAL_KEY, json); }catch(err){}
       try{
         await fetch(TODO_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body: json });
