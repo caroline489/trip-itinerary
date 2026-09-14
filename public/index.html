@@ -143,6 +143,36 @@
   .est-note{ font-size:11px; color:var(--ink-soft); margin-top:6px; }
   .overnight-note{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); }
 
+  /* ---------- 灵活活动（可调整顺序/移到别天） ---------- */
+  .flex-section{ margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); }
+  .flex-heading{ font-size:12px; font-weight:600; color:var(--teal-deep); margin-bottom:8px; }
+  .flex-heading .en{ font-weight:400; color:var(--ink-soft); font-size:11px; }
+  .flex-empty{ font-size:12.5px; color:var(--ink-soft); font-style:italic; margin-bottom:8px; }
+  .flex-card{
+    background: var(--paper-raised); border:1px solid var(--line-soft); border-radius:8px;
+    padding:8px 10px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;
+    gap:8px; flex-wrap:wrap;
+  }
+  .flex-card-main{ font-size:13.5px; flex:1 1 140px; min-width:0; }
+  .flex-time{ font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-right:6px; }
+  .flex-card-controls{ display:flex; align-items:center; gap:4px; flex:0 0 auto; }
+  .flex-btn{
+    border:1px solid var(--line); background:var(--paper); color:var(--ink-soft); cursor:pointer;
+    width:26px; height:26px; border-radius:6px; font-size:11px; line-height:1;
+  }
+  .flex-btn:disabled{ opacity:0.3; cursor:default; }
+  .flex-btn.flex-del{ color:var(--owe); border-color:var(--owe); }
+  .flex-move{
+    font-size:11px; border:1px solid var(--line); border-radius:6px; padding:4px 4px;
+    background:var(--paper); color:var(--ink-soft); max-width:92px;
+  }
+  .flex-add-btn{
+    display:block; width:100%; border:1px dashed var(--line); background:transparent;
+    color:var(--teal-deep); border-radius:8px; padding:8px; font-size:13px; cursor:pointer;
+    font-family:var(--font-sans); font-weight:600;
+  }
+  .flex-add-btn:hover{ border-color:var(--teal); background:var(--paper-raised); }
+
   /* ---------- Todo / tips ---------- */
   .plain-list{ margin:0; padding-left:0; list-style:none; }
   .plain-list li{ padding:8px 0; border-bottom:1px solid var(--line-soft); font-size:14px; }
@@ -539,6 +569,131 @@
       stops:[] }
   ];
 
+  /* ================= 灵活活动：可调整顺序 / 移到别天 / 新增 / 删除 =================
+     只有「预估时段、不需要订票」的项目才会变成可调整的卡片；机票、已订门票、
+     固定时间的项目维持原样、不能动，避免跟实际订票状态脱节。 */
+  const flexRegistry = {}; // { id: { label, t } }
+  const flexOrder = {};    // { dayId: [id, id, ...] }
+  let flexSeq = 0;
+
+  function extractFlexItems(){
+    days.forEach(d => {
+      flexOrder[d.id] = flexOrder[d.id] || [];
+      d.items = d.items.filter(it => {
+        if(it.est && !it.book){
+          const id = it.id || `flex-${d.id}-${flexSeq++}`;
+          flexRegistry[id] = { label: it.label, t: it.t || '' };
+          flexOrder[d.id].push(id);
+          return false; // 从固定列表里移除，改由灵活区块渲染
+        }
+        return true;
+      });
+    });
+  }
+
+  function dayLabel(dayId){
+    const d = days.find(x => x.id === dayId);
+    return d ? `D${d.id.slice(1)} ${d.date.slice(5)} ${d.city}` : dayId;
+  }
+
+  function buildFlexSectionHtml(dayId){
+    const ids = flexOrder[dayId] || [];
+    let html = `<div class="flex-section"><div class="flex-heading">灵活活动 <span class="en">可调整顺序 / 移到别天</span></div>`;
+    if(ids.length === 0){
+      html += `<div class="flex-empty">暂无</div>`;
+    } else {
+      ids.forEach((id, idx) => {
+        const item = flexRegistry[id];
+        if(!item) return;
+        const dayOptions = days.map(d => `<option value="${d.id}" ${d.id===dayId?'selected':''}>${dayLabel(d.id)}</option>`).join('');
+        html += `
+          <div class="flex-card" data-flex-id="${id}">
+            <div class="flex-card-main">
+              ${item.t ? `<span class="flex-time">${item.t}</span>` : ''}
+              <span class="flex-label">${item.label}</span>
+            </div>
+            <div class="flex-card-controls">
+              <button class="flex-btn" data-act="up" ${idx===0?'disabled':''} title="往前移">▲</button>
+              <button class="flex-btn" data-act="down" ${idx===ids.length-1?'disabled':''} title="往后移">▼</button>
+              <select class="flex-move" data-act="move">${dayOptions}</select>
+              <button class="flex-btn flex-del" data-act="del" title="删除">×</button>
+            </div>
+          </div>`;
+      });
+    }
+    html += `<button class="flex-add-btn" data-add-day="${dayId}">+ 添加活动</button></div>`;
+    return html;
+  }
+
+  function wireFlexSection(card, dayId){
+    card.querySelectorAll('.flex-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.closest('.flex-card').dataset.flexId;
+        const act = btn.dataset.act;
+        const arr = flexOrder[dayId];
+        const i = arr.indexOf(id);
+        if(act === 'up' && i > 0){ [arr[i-1],arr[i]] = [arr[i],arr[i-1]]; }
+        if(act === 'down' && i < arr.length-1){ [arr[i+1],arr[i]] = [arr[i],arr[i+1]]; }
+        if(act === 'del'){ arr.splice(i,1); delete flexRegistry[id]; }
+        queueSaveTodo();
+        renderDayBody(days.find(x => x.id === dayId));
+      });
+    });
+    card.querySelectorAll('.flex-move').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const id = sel.closest('.flex-card').dataset.flexId;
+        const newDay = sel.value;
+        if(newDay === dayId) return;
+        flexOrder[dayId] = flexOrder[dayId].filter(x => x !== id);
+        flexOrder[newDay] = flexOrder[newDay] || [];
+        flexOrder[newDay].push(id);
+        queueSaveTodo();
+        renderDayBody(days.find(x => x.id === dayId));
+        renderDayBody(days.find(x => x.id === newDay));
+      });
+    });
+    const addBtn = card.querySelector('.flex-add-btn');
+    if(addBtn){
+      addBtn.addEventListener('click', () => openAddFlexModal(dayId));
+    }
+  }
+
+  function openAddFlexModal(dayId){
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">添加活动 · ${dayLabel(dayId)}</div>
+        <label class="field-label">时间（可留空）</label>
+        <input type="text" id="addFlexTime" placeholder="例如 下午 / 14:00">
+        <label class="field-label" style="margin-top:10px;">地点 / 内容</label>
+        <input type="text" id="addFlexLabel" placeholder="例如 焦糖布丁山 Turó de la Rovira">
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="addFlexCancel">取消</button>
+          <button class="btn btn-primary" id="addFlexOk">添加</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('addFlexLabel').focus();
+    const close = () => overlay.remove();
+    document.getElementById('addFlexCancel').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) close(); });
+    document.getElementById('addFlexOk').addEventListener('click', () => {
+      const label = document.getElementById('addFlexLabel').value.trim();
+      const t = document.getElementById('addFlexTime').value.trim();
+      if(!label){ document.getElementById('addFlexLabel').focus(); return; }
+      const id = `flex-custom-${Date.now()}`;
+      flexRegistry[id] = { label, t };
+      flexOrder[dayId] = flexOrder[dayId] || [];
+      flexOrder[dayId].push(id);
+      queueSaveTodo();
+      renderDayBody(days.find(x => x.id === dayId));
+      close();
+    });
+  }
+
+  extractFlexItems();
+
   function buildDayBodyHtml(d){
     const nav = dayNavLink(d.stops);
     let body = '';
@@ -550,6 +705,7 @@
         ${it.book && it.id ? `<input type="text" class="note-input" data-note-id="${it.id}" placeholder="记一下可预订时间…" value="${escapeAttr(notesState[it.id] || '')}">` : ''}
         </div></div>`;
     });
+    body += buildFlexSectionHtml(d.id);
     if(d.overnight && d.overnight !== '—') body += `<div class="overnight-note">🛏 当晚入住：${d.overnight}</div>`;
     const hasEst = d.items.some(it => it.est);
     if(hasEst) body += `<div class="est-note">* 为预估时段，具体以当天实际安排为准</div>`;
@@ -593,6 +749,7 @@
         <div class="day-body">${buildDayBodyHtml(d)}</div>`;
       card.querySelector('.day-head').addEventListener('click', () => card.classList.toggle('open'));
       wireNoteInputs(card);
+      wireFlexSection(card, d.id);
       mount.appendChild(card);
     });
     // 默认展开今天或下一个未开始的行程日
@@ -673,6 +830,7 @@
     if(!card) return;
     card.querySelector('.day-body').innerHTML = buildDayBodyHtml(day);
     wireNoteInputs(card);
+    wireFlexSection(card, day.id);
   }
 
   function openConfirmModal(t, checkboxEl){
@@ -750,11 +908,18 @@
 
   function applyLoadedPayload(payload){
     if(!payload) return;
-    // 新格式 { todo:{...}, notes:{...} }；兼容旧的纯 todoState 格式
+    // 新格式 { todo:{...}, notes:{...}, flexOrder:{...}, flexRegistry:{...} }；兼容旧的纯 todoState 格式
     const todoPart = payload.todo || payload;
     const notesPart = payload.notes || {};
     Object.assign(todoState, todoPart);
     Object.assign(notesState, notesPart);
+    if(payload.flexOrder && payload.flexRegistry){
+      // 用存下来的版本整个取代默认值——这是「目前真正的状态」
+      Object.keys(flexOrder).forEach(k => delete flexOrder[k]);
+      Object.assign(flexOrder, payload.flexOrder);
+      Object.keys(flexRegistry).forEach(k => delete flexRegistry[k]);
+      Object.assign(flexRegistry, payload.flexRegistry);
+    }
     Object.entries(todoState).forEach(([target, s]) => { if(s.done) applyConfirmed(target, s.info); });
   }
 
@@ -783,7 +948,7 @@
   function queueSaveTodo(){
     clearTimeout(todoSaveTimer);
     todoSaveTimer = setTimeout(async () => {
-      const json = JSON.stringify({ todo: todoState, notes: notesState });
+      const json = JSON.stringify({ todo: todoState, notes: notesState, flexOrder, flexRegistry });
       try{ localStorage.setItem(TODO_LOCAL_KEY, json); }catch(err){}
       try{
         await fetch(TODO_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body: json });

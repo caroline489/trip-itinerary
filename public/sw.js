@@ -1,4 +1,4 @@
-const CACHE = 'trip-itinerary-v1';
+const CACHE = 'trip-itinerary-v2';
 const SHELL = ['/', '/index.html'];
 
 self.addEventListener('install', (event) => {
