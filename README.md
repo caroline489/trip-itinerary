@@ -1,32 +1,32 @@
-# 行程頁面 — 獨立部署到 Cloudflare Workers（純靜態，無需 KV）
+# 行程頁面 — Cloudflare Workers 部署（含共享待辦狀態）
 
 ## 檔案
 ```
 public/index.html   行程頁面本體
 public/sw.js         離線快取
-wrangler.toml         Worker 設定（純靜態，不需要 KV）
+worker.js             發送網頁 + /api/trip-todo（待办勾选状态的共享存储）
+wrangler.toml         Worker 設定，複用記帳本那個 KV namespace
 ```
 
 ## 部署步驟
 
-1. 把這個資料夾整個推到一個**新的** GitHub repo（跟記帳本分開）：
+這個專案跟記帳本一樣，需要一個 KV namespace。**好消息是不用再建一個新的**——
+`wrangler.toml` 裡已經直接填好記帳本原本那個 KV 的 id
+(`03be3e91f961498996bf76e3c39caced`)，同一個 KV 可以同時綁給多個 Worker，
+不會互相干擾（用不同的 key 存資料）。
+
+1. 推到你已經建好的 `trip-itinerary` repo：
    ```
-   git init
    git add .
-   git commit -m "trip itinerary"
-   git branch -M main
-   git remote add origin https://github.com/你的帳號/trip-itinerary.git
-   git push -u origin main
+   git commit -m "add shared todo backend"
+   git push
    ```
+2. Cloudflare 那邊什麼都不用改——因為 KV id 已經是對的，這次不會再卡住。
+   push 上去就會自動重新部署。
 
-2. Cloudflare Dashboard → Workers & Pages → Create → Workers → Import a repository →
-   選這個新 repo。Cloudflare 會讀到 `wrangler.toml` 並自動部署——**這次不會問你要不要填
-   KV，因為根本沒有用到**。
-
-3. 部署完成後會拿到一個新網址，例如
-   `https://trip-itinerary.你的子網域.workers.dev`，之後 push 就會自動更新。
-
-## 之後怎麼改內容
-所有行程資料都寫在 `public/index.html` 裡的 `<script>` 區塊（航班、酒店、逐日行程、待辦、
-貼士）。之後有新資訊，把截圖給 Claude，Claude 改好整份 `index.html` 給你，
-你貼進去存檔、`git add . && git commit -m "..." && git push` 就好。
+## 待辦清單怎麼運作
+- 每個待辦項目勾選後，會跳出一個小視窗問「確認的時間/場次」，填完會自動：
+  - 把對應的逐日行程項目改成「已訂 xxx」
+  - 存到 KV，讓 Wendy 和 Caro 兩支手機都能看到同一份狀態
+  - 沒有網路時先存本機瀏覽器，恢復連線後自動同步
+- 取消勾選會把行程項目還原成原本的「建議預訂」狀態

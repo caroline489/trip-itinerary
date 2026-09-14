@@ -1,5 +1,13 @@
 name = "trip-itinerary"
+main = "worker.js"
 compatibility_date = "2024-09-23"
 
 [assets]
 directory = "public"
+binding = "ASSETS"
+
+# 复用记帐本那个 KV namespace（同一个 Cloudflare 帐号下，一个 KV
+# 可以同时绑给多个 Worker），用不同的 key 存资料，不会互相冲突。
+[[kv_namespaces]]
+binding = "TRIP_KV"
+id = "03be3e91f961498996bf76e3c39caced"
