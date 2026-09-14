@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="theme-color" content="#F7F2E7">
+<title>西葡行程 · 2026</title>
+<style>
+  :root{
+    --paper: #F7F2E7;
+    --paper-raised: #FCFAF3;
+    --ink: #2A2420;
+    --ink-soft: #6B6058;
+    --line: #DCD2BE;
+    --line-soft: #E9E1CF;
+    --teal: #2E5750;
+    --teal-deep: #1E3E39;
+    --gold: #B4802E;
+    --owe: #A64B3F;
+    --owed: #3C6B4F;
+    --radius: 12px;
+    --shadow: 0 1px 0 rgba(42,36,32,0.06);
+    --tap: 44px;
+    --font-serif: Georgia, 'Iowan Old Style', 'Noto Serif', 'PingFang TC', serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+    /* 每段行程一个颜色，用于地图路线与当日城市标签 */
+    --c0:#B5651D; --c1:#3F6E8C; --c2:#6B8E4E; --c3:#A85B7C;
+    --c4:#2F8577; --c5:#C79A3B; --c6:#5B5A8C; --c7:#B4534A;
+    transition: background .4s, color .4s;
+  }
+  html.night{
+    --paper:#1B2320; --paper-raised:#232E2A; --ink:#EDE7DA; --ink-soft:#B7AE9C;
+    --line:#3A453F; --line-soft:#2C3630; --teal:#7FBDAE; --teal-deep:#A9D8C9;
+    --gold:#E0B25C; --owe:#E08B7D; --owed:#8FD1AE;
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--paper); color: var(--ink);
+    font-family: var(--font-sans); font-size: 16px; line-height: 1.6;
+    padding: 20px 14px 90px;
+  }
+  .wrap{ max-width: 720px; margin: 0 auto; }
+  a{ color: var(--teal-deep); }
+  h1,h2,h3{ font-family: var(--font-serif); color: var(--teal-deep); margin:0; }
+  section{ margin-top: 30px; }
+  h2{ font-size:19px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .en{ color: var(--ink-soft); font-weight:400; font-size:0.82em; }
+  .card{
+    background: var(--paper-raised); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .top-nav{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .top-nav a{ font-size:12.5px; text-decoration:none; border-bottom:1px dotted var(--ink-soft); }
+
+  /* ---------- What's next ---------- */
+  .next-card{
+    background: linear-gradient(135deg, var(--teal-deep), var(--teal));
+    color:#F7F2E7; border-radius: var(--radius); padding:20px; text-align:center;
+  }
+  .next-card .eyebrow{ font-size:12.5px; opacity:0.85; }
+  .next-card .label{ font-family:var(--font-serif); font-size:19px; margin:6px 0 14px; }
+  .countdown{ display:flex; justify-content:center; gap:18px; }
+  .countdown .num{ font-family:var(--font-mono); font-size:34px; font-weight:600; }
+  .countdown .unit{ font-size:11px; opacity:0.8; }
+  .next-card .localtime{ margin-top:12px; font-size:12px; opacity:0.8; }
+
+  /* ---------- Map ---------- */
+  .map-card{ padding:8px; overflow:hidden; }
+  svg#routeMap{ width:100%; height:auto; display:block; }
+  .map-legend{ display:flex; flex-wrap:wrap; gap:8px 14px; padding:10px 8px 2px; font-size:12px; color:var(--ink-soft); }
+  .map-legend .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  .city-label{ font-family: var(--font-sans); font-size:11px; fill: var(--ink); }
+  .city-en{ font-size:8.5px; fill: var(--ink-soft); }
+
+  /* ---------- Confirmed bookings ---------- */
+  .booking-item{ border-left:3px solid var(--line); padding:8px 0 8px 12px; margin-bottom:6px; }
+  .booking-item.flight{ border-left-color: var(--teal); }
+  .booking-item.car{ border-left-color: var(--gold); }
+  .booking-item .b-title{ font-weight:600; font-size:14.5px; }
+  .booking-item .b-meta{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; line-height:1.6; }
+  .booking-item .b-meta a{ text-decoration:none; }
+  .subhead{ font-size:13px; color:var(--ink-soft); margin:16px 0 8px; font-weight:600; }
+  .subhead:first-child{ margin-top:0; }
+
+  /* ---------- Day by day ---------- */
+  .day-card{ border-radius: var(--radius); margin-bottom:12px; overflow:hidden; border:1px solid var(--line); }
+  .day-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 14px; cursor:pointer; background: var(--paper-raised);
+  }
+  .day-head .d-left{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .day-dot{ width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
+  .day-title{ font-weight:600; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .day-date{ font-size:12px; color:var(--ink-soft); flex:0 0 auto; }
+  .day-caret{ transition: transform .2s; color: var(--ink-soft); flex:0 0 auto; }
+  .day-card.open .day-caret{ transform: rotate(90deg); }
+  .day-body{ display:none; padding:6px 14px 14px; }
+  .day-card.open .day-body{ display:block; }
+  .day-nav-btn{
+    display:inline-flex; align-items:center; gap:6px; font-size:12.5px;
+    background: var(--paper); border:1px solid var(--line); border-radius:999px;
+    padding:6px 12px; text-decoration:none; color:var(--teal-deep); margin-bottom:10px;
+  }
+  .warn-banner{
+    background: rgba(166,75,63,0.1); border:1px solid var(--owe); color:var(--owe);
+    border-radius:8px; padding:8px 10px; font-size:12.5px; margin-bottom:10px; line-height:1.5;
+  }
+  .timeline-item{ display:flex; gap:12px; padding:7px 0; border-bottom:1px solid var(--line-soft); }
+  .timeline-item:last-child{ border-bottom:none; }
+  .ti-time{ flex:0 0 58px; font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); padding-top:1px; }
+  .ti-time.est::after{ content:'*'; }
+  .ti-content{ flex:1 1 auto; font-size:14px; }
+  .ti-content a{ text-decoration:none; border-bottom:1px dotted var(--teal); }
+  .book-flag{
+    display:inline-block; font-size:11px; background: var(--gold); color:#fff;
+    border-radius:5px; padding:1px 6px; margin-left:6px; vertical-align:1px;
+  }
+  .est-note{ font-size:11px; color:var(--ink-soft); margin-top:6px; }
+  .overnight-note{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); }
+
+  /* ---------- Todo / tips ---------- */
+  .plain-list{ margin:0; padding-left:0; list-style:none; }
+  .plain-list li{ padding:8px 0; border-bottom:1px solid var(--line-soft); font-size:14px; }
+  .plain-list li:last-child{ border-bottom:none; }
+  .plain-list .urgent{ color: var(--owe); font-weight:600; }
+  .plain-list .tag{
+    font-size:10.5px; border-radius:5px; padding:1px 6px; margin-left:6px;
+    background: var(--line-soft); color: var(--ink-soft);
+  }
+  .plain-list .tag.hot{ background: var(--owe); color:#fff; }
+
+  footer{ margin-top:36px; font-size:12px; color:var(--ink-soft); text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top-nav">
+    <h1 style="font-size:24px;">西班牙 · 葡萄牙 15 天</h1>
+  </div>
+  <div style="color:var(--ink-soft); font-size:13px; margin-bottom:18px;">2026/09/22 – 2026/10/08　Wendy &amp; Caro</div>
+
+  <!-- What's next -->
+  <div class="next-card">
+    <div class="eyebrow">距离下一件事</div>
+    <div class="label" id="nextLabel">加载中…</div>
+    <div class="countdown" id="countdown">
+      <div><div class="num" id="cd-d">–</div><div class="unit">天</div></div>
+      <div><div class="num" id="cd-h">–</div><div class="unit">时</div></div>
+      <div><div class="num" id="cd-m">–</div><div class="unit">分</div></div>
+    </div>
+    <div class="localtime" id="nextLocal"></div>
+  </div>
+
+  <!-- Map -->
+  <section>
+    <h2>行程总览 <span class="en">Route overview</span></h2>
+    <div class="card map-card">
+      <div id="mapMount"></div>
+      <div class="map-legend" id="mapLegend"></div>
+    </div>
+  </section>
+
+  <!-- Confirmed bookings -->
+  <section>
+    <h2>已确认预订 <span class="en">Confirmed bookings</span></h2>
+    <div class="card" id="bookingsMount"></div>
+  </section>
+
+  <!-- Day by day -->
+  <section>
+    <h2>逐日行程 <span class="en">Day by day</span></h2>
+    <div id="daysMount"></div>
+  </section>
+
+  <!-- Todo -->
+  <section>
+    <h2>待办清单 <span class="en">To-do</span></h2>
+    <div class="card">
+      <ul class="plain-list" id="todoMount"></ul>
+    </div>
+  </section>
+
+  <!-- Tips -->
+  <section>
+    <h2>实用贴士 <span class="en">Tips</span></h2>
+    <div class="card">
+      <ul class="plain-list" id="tipsMount"></ul>
+    </div>
+  </section>
+
+  <footer>点地点名可直接跳转 Google 地图导航 · 日夜配色跟随你的设备时间</footer>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+
+  /* ================= 日夜主题：跟随打开网页那个人的设备时间 ================= */
+  function applyTheme(){
+    const h = new Date().getHours();
+    document.documentElement.classList.toggle('night', h < 6 || h >= 19);
+  }
+  applyTheme();
+  setInterval(applyTheme, 60000);
+
+  /* ================= 城市颜色 ================= */
+  const CITY_COLOR = {
+    madrid:'var(--c0)', salamanca:'var(--c1)', porto:'var(--c2)', lisbon:'var(--c3)',
+    faro:'var(--c4)', sevilla:'var(--c5)', ronda:'var(--c6)', barcelona:'var(--c7)'
+  };
+
+  /* ================= Google Maps 导航链接 ================= */
+  function navLink(place){
+    if(place.lat) return `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.q)}`;
+  }
+  function dayNavLink(stops){
+    if(!stops || stops.length < 2) return null;
+    const fmt = s => s.lat ? `${s.lat},${s.lng}` : encodeURIComponent(s.q);
+    const origin = fmt(stops[0]);
+    const destination = fmt(stops[stops.length-1]);
+    const waypoints = stops.slice(1,-1).map(fmt).join('|');
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+    if(waypoints) url += `&waypoints=${waypoints}`;
+    return url;
+  }
+  function placeLink(name, place){
+    return `<a href="${navLink(place)}" target="_blank" rel="noopener">${name}</a>`;
+  }
+
+  /* ================= 数据：已确认预订 ================= */
+  const bookings = {
+    flights: [
+      { code:'CX315　国泰航空', route:'香港 HKG → 马德里 MAD', date:'2026-09-22（周二）',
+        dep:'00:45　香港国际机场 T1', arr:'09:15　马德里 Adolfo Suárez 机场 T4S',
+        meta:'经济舱 · Airbus A350-900 · 飞行 14 小时 30 分' },
+      { code:'VY2015　Vueling', route:'格拉纳达 GRX → 巴塞罗那 BCN', date:'2026-10-03（周六）',
+        dep:'19:30　格拉纳达机场', arr:'21:00　巴塞罗那机场', meta:'飞行 1 小时 30 分' },
+      { code:'QR142　卡达航空', route:'巴塞罗那 BCN → 多哈 DOH', date:'2026-10-07（周三）',
+        dep:'22:50　巴塞罗那 El Prat 机场 T1', arr:'06:15　多哈 Hamad 机场（+1 天，10/8）',
+        meta:'飞行 6 小时 25 分 · 中转前往香港' },
+      { code:'QR816　卡达航空', route:'多哈 DOH → 香港 HKG', date:'2026-10-08（周四）',
+        dep:'09:00　多哈 Hamad 机场', arr:'21:55　香港国际机场 T1', meta:'飞行 7 小时 55 分' }
+    ],
+    car: [
+      { title:'接机：马德里机场 → 酒店', when:'2026-09-22　约 09:30–10:15（航班 09:15 落地后）', meta:'舒适5座 · 可载4人 2件行李' },
+      { title:'全天包车：马德里 → 巴塞罗那沿途（9/23–10/3，共10天）', when:'覆盖托莱多、塞哥维亚、萨拉曼卡、波尔图、辛特拉、里斯本、法鲁、塞维利亚、龙达、格拉纳达各段', meta:'舒适5座 · 可载4人 2件行李' },
+      { title:'全天包车 + 送机：巴塞罗那 → 机场', when:'2026-10-07　全天使用，傍晚送机（航班 22:50 起飞，建议 19:50 前到机场）', meta:'联系电话：待补充 ⚠️' }
+    ],
+    hotels: [
+      { city:'马德里', name:'Ocean Drive Madrid（海洋大道酒店）', dates:'9/22 – 9/25（3晚）',
+        addr:'Pl. de Isabel II, 7, Centro, 28013 Madrid, Spain', phone:'+34 910 88 28 04' },
+      { city:'萨拉曼卡', name:'NH Collection Salamanca Palacio de Castellanos（卡斯泰拉诺斯宫 NH 典藏酒店）', dates:'9/25 – 9/26（1晚）',
+        addr:'C. San Pablo, 58-64, 37008 Salamanca, Spain', phone:'+34 916 00 81 46' },
+      { city:'波尔图', name:'Porto Royal Bridges（皇家桥梁酒店）', dates:'9/26 – 9/28（2晚）',
+        addr:'R. de Sá da Bandeira 53, 4000-433 Porto, Portugal', phone:'+351 22 243 6221' },
+      { city:'里斯本', name:'Omid Saldanha Hotel（奥米德萨尔达尼亚酒店）', dates:'9/28 – 9/30（2晚）',
+        addr:'R. Filipe Folque 49, 1050-111 Lisboa, Portugal', phone:'+351 21 053 6850' },
+      { city:'法鲁', name:'Luxury Guest House Opus One（作品一号奢华旅馆）', dates:'9/30 – 10/1（1晚）',
+        addr:'R. Serpa Pinto 37, 8000-431 Faro, Portugal', phone:'+351 966 212 308' },
+      { city:'塞维利亚', name:'Hotel Sevilla Center（塞维利亚中心酒店）', dates:'10/1 – 10/2（1晚）',
+        addr:'Av. de la Buhaira, 24, 41018 Sevilla, Spain', phone:'+34 954 54 95 00' },
+      { city:'龙达', name:'Hotel Ronda Moments（伦达时刻酒店）⚠️', dates:'10/2 – 10/3（1晚）',
+        addr:'Partida los Morales, 28, 29400 Ronda, Málaga, Spain', phone:'+34 665 82 78 62',
+        warn:'城外独立小屋型民宿，距龙达老城约10–15分钟车程，无前台、需用 WhatsApp 领取门禁密码，建议提前确认入住流程' },
+      { city:'巴塞罗那', name:"Charles' Apartments in Barcelona（Airbnb，房东 Carlos）", dates:'10/3 – 10/7（4晚）',
+        addr:'Avinguda de la República Argentina, 5, Barcelona, Spain', phone:'（Airbnb 站内联系房东 Carlos）' }
+    ],
+    tickets: [
+      { title:'阿尔罕布拉宫 Alhambra', when:'2026-10-03　15:30 入场', meta:'⚠️ 当天需赶19:30航班，时间偏紧，详见当日行程提醒' },
+      { title:'圣家堂 Sagrada Família', when:'2026-10-05　12:45 入场', meta:'含塔楼 Tower 13:30' }
+    ]
+  };
+
+  function renderBookings(){
+    const el = $('bookingsMount'); let html = '';
+    html += '<div class="subhead">机票 Flights</div>';
+    bookings.flights.forEach(f => {
+      html += `<div class="booking-item flight"><div class="b-title">${f.code} · ${f.route}</div>
+        <div class="b-meta">${f.date}<br>${f.dep} → ${f.arr}<br>${f.meta}</div></div>`;
+    });
+    html += '<div class="subhead">包车 Car charter</div>';
+    bookings.car.forEach(c => {
+      html += `<div class="booking-item car"><div class="b-title">${c.title}</div>
+        <div class="b-meta">${c.when}<br>${c.meta}</div></div>`;
+    });
+    html += '<div class="subhead">酒店 Hotels</div>';
+    bookings.hotels.forEach(h => {
+      const link = placeLink(h.addr, {q:h.addr});
+      html += `<div class="booking-item"><div class="b-title">${h.city} · ${h.name}</div>
+        <div class="b-meta">${h.dates}<br>📍 ${link}<br>📞 ${h.phone}${h.warn ? `<br><span style="color:var(--owe)">⚠️ ${h.warn}</span>` : ''}</div></div>`;
+    });
+    html += '<div class="subhead">门票 Tickets</div>';
+    bookings.tickets.forEach(t => {
+      html += `<div class="booking-item"><div class="b-title">${t.title}</div>
+        <div class="b-meta">${t.when}<br>${t.meta}</div></div>`;
+    });
+    el.innerHTML = html;
+  }
+
+  /* ================= 数据：逐日行程 ================= */
+  // tz: 西班牙/葡萄牙段用 '+02:00'（葡萄牙其实是 +01:00，已在各城市标注时区）
+  const days = [
+    { id:'d1', date:'2026-09-22', wd:'周二', city:'马德里 Madrid', color:CITY_COLOR.madrid,
+      items:[
+        {t:'00:45', label:'CX315 香港 → 马德里 起飞'},
+        {t:'09:15', label:'抵达马德里机场 T4S'},
+        {t:'约10:00', est:true, label:'包车接机 → 酒店'},
+        {t:'下午', est:true, label:'酒店 check-in，自由活动、调整时差'}
+      ],
+      overnight:'Ocean Drive Madrid', stops:[{q:'Adolfo Suárez Madrid–Barajas Airport'},{q:'Ocean Drive Madrid, Plaza de Isabel II 7'}] },
+
+    { id:'d2', date:'2026-09-23', wd:'周三', city:'马德里 Madrid', color:CITY_COLOR.madrid,
+      items:[
+        {t:'上午', est:true, label:`${placeLink('马德里王宫 (Royal Palace of Madrid)',{q:'Palacio Real de Madrid'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('太阳门广场 (Puerta del Sol)',{q:'Puerta del Sol Madrid'})}`},
+        {t:'下午', est:true, label:`${placeLink('丽池公园 (Parque del Retiro)',{q:'Parque del Retiro Madrid'})}`},
+        {t:'', est:true, label:`德波神庙 (Templo de Debod)、圣米盖尔市场 (Mercado de San Miguel)`}
+      ],
+      overnight:'Ocean Drive Madrid（连住）',
+      stops:[{q:'Palacio Real de Madrid'},{q:'Puerta del Sol Madrid'},{q:'Parque del Retiro Madrid'},{q:'Mercado de San Miguel Madrid'}] },
+
+    { id:'d3', date:'2026-09-24', wd:'周四', city:'托莱多 Toledo（马德里出发一日游）', color:CITY_COLOR.madrid,
+      items:[
+        {t:'全天', est:true, label:`包车前往 ${placeLink('托莱多古城 (Toledo)',{q:'Toledo Spain'})}`},
+        {t:'', est:true, label:`${placeLink('托莱多大教堂 (Toledo Cathedral)',{q:'Catedral de Toledo'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('托莱多城堡 (Alcázar de Toledo)',{q:'Alcázar de Toledo'})}`, book:true},
+        {t:'傍晚', est:true, label:`${placeLink('山谷瞭望台 (Mirador del Valle)',{q:'Mirador del Valle Toledo'})}`}
+      ],
+      overnight:'Ocean Drive Madrid（连住）',
+      stops:[{q:'Toledo Spain'},{q:'Catedral de Toledo'},{q:'Alcázar de Toledo'},{q:'Mirador del Valle Toledo'}] },
+
+    { id:'d4', date:'2026-09-25', wd:'周五', city:'塞哥维亚 → 萨拉曼卡', color:CITY_COLOR.salamanca,
+      warn:'一天内跑两座城，车程加游览约3小时+，塞哥维亚建议控制在2小时内（主教堂+城堡外观为主）',
+      items:[
+        {t:'上午', est:true, label:`包车离开马德里 → ${placeLink('塞哥维亚主教堂 (Segovia Cathedral)',{q:'Catedral de Segovia'})}`},
+        {t:'', est:true, label:`${placeLink('塞哥维亚城堡 (Alcázar of Segovia)',{q:'Alcázar of Segovia'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('塞哥维亚输水道 (Aqueduct of Segovia)',{q:'Aqueduct of Segovia'})}`},
+        {t:'下午', est:true, label:`前往萨拉曼卡，${placeLink('萨拉曼卡大学 (University of Salamanca)',{q:'University of Salamanca'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('罗马桥 (Roman Bridge)',{q:'Puente Romano Salamanca'})}`}
+      ],
+      overnight:'NH Collection Salamanca Palacio de Castellanos',
+      stops:[{q:'Catedral de Segovia'},{q:'Alcázar of Segovia'},{q:'Aqueduct of Segovia'},{q:'University of Salamanca'},{q:'Puente Romano Salamanca'}] },
+
+    { id:'d5', date:'2026-09-26', wd:'周六', city:'萨拉曼卡 → 波尔图', color:CITY_COLOR.porto,
+      warn:'长途驾驶约450公里，是体力较重的一天，抵达当晚建议只安排轻松散步',
+      items:[
+        {t:'上午', est:true, label:`${placeLink('圣灵教堂 (La Clerecía) / 牧师塔',{q:'Torre de la Clerecía Salamanca'})}`},
+        {t:'全天', est:true, label:'包车长途前往波尔图（约450公里）'},
+        {t:'傍晚', est:true, label:`${placeLink('路易一世大桥 (Dom Luís I Bridge)',{q:'Dom Luís I Bridge Porto'})}`},
+        {t:'', est:true, label:`${placeLink('杜罗河落日观景台',{q:'Douro river viewpoint Porto'})}`}
+      ],
+      overnight:'Porto Royal Bridges',
+      stops:[{q:'Torre de la Clerecía Salamanca'},{q:'Dom Luís I Bridge Porto'}] },
+
+    { id:'d6', date:'2026-09-27', wd:'周日', city:'波尔图 Porto', color:CITY_COLOR.porto,
+      items:[
+        {t:'上午', est:true, label:`${placeLink('莱罗书店 (Livraria Lello)',{q:'Livraria Lello Porto'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('波尔图证券交易所宫 (Palácio da Bolsa)',{q:'Palácio da Bolsa Porto'})}`, book:true},
+        {t:'下午', est:true, label:`${placeLink('雷贝拉广场 (Praça da Ribeira)',{q:'Praça da Ribeira Porto'})} 老城漫步`},
+        {t:'傍晚', est:true, label:`${placeLink('桑德曼酒窖品酒 (Sandeman Cellars)',{q:'Sandeman Cellars Porto'})}〔待订〕`}
+      ],
+      overnight:'Porto Royal Bridges（连住）',
+      stops:[{q:'Livraria Lello Porto'},{q:'Palácio da Bolsa Porto'},{q:'Praça da Ribeira Porto'},{q:'Sandeman Cellars Porto'}] },
+
+    { id:'d7', date:'2026-09-28', wd:'周一', city:'波尔图 → 辛特拉 → 里斯本', color:CITY_COLOR.lisbon,
+      items:[
+        {t:'全天', est:true, label:'包车长途前往里斯本（约300公里）'},
+        {t:'', est:true, label:`途经 ${placeLink('佩纳宫 (Pena Palace)',{q:'Pena Palace Sintra'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('辛特拉小镇 (Sintra)',{q:'Sintra Portugal'})}`},
+        {t:'', est:true, label:`${placeLink('罗卡角 (Cabo da Roca)',{q:'Cabo da Roca'})}`}
+      ],
+      overnight:'Omid Saldanha Hotel',
+      stops:[{q:'Pena Palace Sintra'},{q:'Sintra Portugal'},{q:'Cabo da Roca'},{q:'Omid Saldanha Hotel Lisbon'}] },
+
+    { id:'d8', date:'2026-09-29', wd:'周二', city:'里斯本 Lisbon', color:CITY_COLOR.lisbon,
+      items:[
+        {t:'上午', est:true, label:`${placeLink('热罗尼姆修道院 (Jerónimos Monastery)',{q:'Jerónimos Monastery Lisbon'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('贝伦塔 (Belém Tower)',{q:'Belém Tower Lisbon'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('发现者纪念碑 (Padrão dos Descobrimentos)',{q:'Padrão dos Descobrimentos'})}`},
+        {t:'下午', est:true, label:`${placeLink('自由大道 (Avenida da Liberdade)',{q:'Avenida da Liberdade Lisbon'})}`}
+      ],
+      overnight:'Omid Saldanha Hotel（连住）',
+      stops:[{q:'Jerónimos Monastery Lisbon'},{q:'Belém Tower Lisbon'},{q:'Padrão dos Descobrimentos'},{q:'Avenida da Liberdade Lisbon'}] },
+
+    { id:'d9', date:'2026-09-30', wd:'周三', city:'里斯本 → 法鲁', color:CITY_COLOR.faro,
+      items:[
+        {t:'上午', est:true, label:`${placeLink('圣乔治城堡 (São Jorge Castle)',{q:'São Jorge Castle Lisbon'})}`},
+        {t:'', est:true, label:`${placeLink('阿尔法玛区 (Alfama)',{q:'Alfama Lisbon'})} / 圣胡斯塔升降机 (Santa Justa Lift)`},
+        {t:'午后', est:true, label:'包车南下法鲁（约300公里）'}
+      ],
+      overnight:'Luxury Guest House Opus One',
+      stops:[{q:'São Jorge Castle Lisbon'},{q:'Santa Justa Lift Lisbon'},{q:'Luxury Guest House Opus One Faro'}] },
+
+    { id:'d10', date:'2026-10-01', wd:'周四', city:'法鲁 → 塞维利亚', color:CITY_COLOR.sevilla,
+      warn:'车程约2.5小时，若中午才出发，塞维利亚王宫可能来不及在闭馆前进入，建议法鲁尽量早出发',
+      items:[
+        {t:'上午', est:true, label:'早出发，包车前往塞维利亚（约2.5小时车程）'},
+        {t:'下午', est:true, label:`${placeLink('塞维利亚王宫 (Real Alcázar de Sevilla)',{q:'Real Alcázar de Sevilla'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('圣十字区 (Barrio Santa Cruz)',{q:'Barrio Santa Cruz Sevilla'})}`},
+        {t:'', est:true, label:`${placeLink('西班牙广场 (Plaza de España)',{q:'Plaza de España Sevilla'})}`},
+        {t:'晚上', est:true, label:'弗拉门戈表演 (Flamenco show)〔待订〕'}
+      ],
+      overnight:'Hotel Sevilla Center',
+      stops:[{q:'Real Alcázar de Sevilla'},{q:'Barrio Santa Cruz Sevilla'},{q:'Plaza de España Sevilla'}] },
+
+    { id:'d11', date:'2026-10-02', wd:'周五', city:'塞维利亚 → 龙达', color:CITY_COLOR.ronda,
+      items:[
+        {t:'上午', est:true, label:`${placeLink('塞维利亚大教堂 (Seville Cathedral)',{q:'Seville Cathedral'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('都市阳伞 (Metropol Parasol)',{q:'Metropol Parasol Sevilla'})}`},
+        {t:'下午', est:true, label:'包车前往龙达'},
+        {t:'', est:true, label:`${placeLink('斗牛广场 (Plaza de Toros)',{q:'Plaza de Toros Ronda'})}`},
+        {t:'傍晚', est:true, label:`${placeLink('龙达新桥 (Puente Nuevo)',{q:'Puente Nuevo Ronda'})} / 峡谷 (El Tajo Gorge)`}
+      ],
+      overnight:'Hotel Ronda Moments ⚠️见上方入住提醒',
+      stops:[{q:'Seville Cathedral'},{q:'Metropol Parasol Sevilla'},{q:'Plaza de Toros Ronda'},{q:'Puente Nuevo Ronda'}] },
+
+    { id:'d12', date:'2026-10-03', wd:'周六', city:'龙达 → 格拉纳达 → 巴塞罗那', color:CITY_COLOR.barcelona,
+      warn:'高风险日：15:30入阿尔罕布拉宫，游览2–3小时后还要赶到机场（车程约25–30分钟+值机），缓冲只有1.5小时左右，建议不要在阿尔罕布拉宫之外再排其他行程',
+      items:[
+        {t:'上午', est:true, label:'包车前往格拉纳达'},
+        {t:'', est:true, label:`${placeLink('阿尔拜辛区 (Albaicín)',{q:'Albaicín Granada'})} / ${placeLink('圣尼古拉斯观景台',{q:'Mirador San Nicolás Granada'})}`},
+        {t:'15:30', label:`${placeLink('阿尔罕布拉宫 (Alhambra)',{q:'Alhambra Granada'})} 入场（已订）`},
+        {t:'约18:00', est:true, label:'包车 → 格拉纳达机场'},
+        {t:'19:30', label:'VY2015 格拉纳达 → 巴塞罗那 起飞'},
+        {t:'21:00', label:'抵达巴塞罗那，入住 Airbnb'}
+      ],
+      overnight:"Charles' Apartments in Barcelona（Airbnb, Carlos）",
+      stops:[{q:'Albaicín Granada'},{q:'Alhambra Granada'},{q:'Granada Airport'}] },
+
+    { id:'d13', date:'2026-10-04', wd:'周日', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
+      items:[
+        {t:'上午', est:true, label:`${placeLink('蒂比达博 (Tibidabo)',{q:'Tibidabo Barcelona'})}`},
+        {t:'下午', est:true, label:`${placeLink('奎尔公园 (Park Güell)',{q:'Park Güell'})}`, book:true}
+      ],
+      overnight:"Charles' Apartments（连住）",
+      stops:[{q:'Tibidabo Barcelona'},{q:'Park Güell'}] },
+
+    { id:'d14', date:'2026-10-05', wd:'周一', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
+      items:[
+        {t:'12:45', label:`${placeLink('圣家堂 (Sagrada Família)',{q:'Sagrada Família'})} 入场（已订）`},
+        {t:'13:30', label:'圣家堂塔楼 Tower 登塔（已订）'}
+      ],
+      overnight:"Charles' Apartments（连住）",
+      stops:[{q:'Sagrada Família'}] },
+
+    { id:'d15', date:'2026-10-06', wd:'周二', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
+      items:[
+        {t:'08:00', label:`${placeLink('巴特罗之家 (Casa Batlló)',{q:'Casa Batlló'})}`, book:true},
+        {t:'10:00', label:`${placeLink('米拉之家 (Casa Milà)',{q:'Casa Milà'})}`, book:true},
+        {t:'下午', est:true, label:`${placeLink('哥特区 (Gothic Quarter)',{q:'Barri Gòtic Barcelona'})} / 兰布拉大道 (La Rambla)`},
+        {t:'', est:true, label:`加泰罗尼亚国家艺术博物馆 (MNAC)〔待订〕`}
+      ],
+      overnight:"Charles' Apartments（连住）",
+      stops:[{q:'Casa Batlló'},{q:'Casa Milà'},{q:'Barri Gòtic Barcelona'}] },
+
+    { id:'d16', date:'2026-10-07', wd:'周三', city:'巴塞罗那 → 回程', color:CITY_COLOR.barcelona,
+      items:[
+        {t:'全天', est:true, label:'包车最后一天，可安排市区自由活动'},
+        {t:'约19:50', est:true, label:'包车送机 → 巴塞罗那机场'},
+        {t:'22:50', label:'QR142 巴塞罗那 → 多哈 起飞'}
+      ],
+      overnight:'机上过夜（经多哈转机）',
+      stops:[{q:"Charles' Apartments Barcelona"},{q:'Barcelona–El Prat Airport'}] },
+
+    { id:'d17', date:'2026-10-08', wd:'周四', city:'多哈 → 香港', color:CITY_COLOR.barcelona,
+      items:[
+        {t:'06:15', label:'抵达多哈 Hamad 机场'},
+        {t:'09:00', label:'QR816 多哈 → 香港 起飞'},
+        {t:'21:55', label:'抵达香港，行程结束'}
+      ],
+      overnight:'—',
+      stops:[] }
+  ];
+
+  function renderDays(){
+    const mount = $('daysMount');
+    days.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'day-card';
+      const nav = dayNavLink(d.stops);
+      let body = '';
+      if(d.warn) body += `<div class="warn-banner">⚠️ ${d.warn}</div>`;
+      if(nav) body += `<a class="day-nav-btn" href="${nav}" target="_blank" rel="noopener">🧭 一键打开当日路线导航</a>`;
+      d.items.forEach(it => {
+        body += `<div class="timeline-item"><div class="ti-time${it.est?' est':''}">${it.t}</div>
+          <div class="ti-content">${it.label}${it.book?'<span class="book-flag">建议预订</span>':''}</div></div>`;
+      });
+      if(d.overnight && d.overnight !== '—') body += `<div class="overnight-note">🛏 当晚入住：${d.overnight}</div>`;
+      const hasEst = d.items.some(it => it.est);
+      if(hasEst) body += `<div class="est-note">* 为预估时段，具体以当天实际安排为准</div>`;
+
+      card.innerHTML = `
+        <div class="day-head">
+          <div class="d-left">
+            <span class="day-dot" style="background:${d.color}"></span>
+            <span class="day-title">D${d.id.slice(1)} ${d.city}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="day-date">${d.date.slice(5)} ${d.wd}</span>
+            <span class="day-caret">▸</span>
+          </div>
+        </div>
+        <div class="day-body">${body}</div>`;
+      card.querySelector('.day-head').addEventListener('click', () => card.classList.toggle('open'));
+      mount.appendChild(card);
+    });
+    // 默认展开今天或下一个未开始的行程日
+    const todayStr = new Date().toISOString().slice(0,10);
+    let target = days.find(d => d.date === todayStr) || days.find(d => d.date > todayStr) || days[0];
+    const el = document.querySelector(`.day-card`);
+    const idx = days.indexOf(target);
+    const cards = document.querySelectorAll('.day-card');
+    if(cards[idx]) cards[idx].classList.add('open');
+  }
+
+  /* ================= 待办清单 ================= */
+  const todo = [
+    { name:'莱罗书店 Livraria Lello（波尔图）', hot:true, note:'游客极多，常提前1个月售罄，务必尽早订' },
+    { name:'佩纳宫 Pena Palace（辛特拉）', hot:true, note:'分时段入场，周末常额满' },
+    { name:'塞维利亚王宫 Real Alcázar de Sevilla', hot:true, note:'分时段票常提前数日售罄' },
+    { name:'奎尔公园 Park Güell（巴塞罗那）', hot:true, note:'付费区强制预约，现场不卖票' },
+    { name:'巴特罗之家 Casa Batlló（巴塞罗那）', hot:true, note:'热门度极高，建议尽快订' },
+    { name:'马德里王宫 Royal Palace of Madrid', note:'旺季建议线上购票' },
+    { name:'托莱多大教堂 / 城堡', note:'建议线上购票避免排队' },
+    { name:'塞哥维亚城堡 Alcázar of Segovia', note:'塔楼登顶名额有限' },
+    { name:'萨拉曼卡大学', note:'限流参观，建议提前' },
+    { name:'波尔图证券交易所宫 Palácio da Bolsa', note:'仅可跟随导览参观，建议先订场次' },
+    { name:'热罗尼姆修道院 / 贝伦塔（里斯本）', note:'建议提前线上购票' },
+    { name:'塞维利亚大教堂 + 希拉尔达塔', note:'旺季当日票常售罄' },
+    { name:'米拉之家 Casa Milà（巴塞罗那）', note:'建议提前，比巴特罗之家稍宽松' },
+    { name:'波尔图酒窖品酒 Sandeman Cellars', note:'还在考虑中，待确定' },
+    { name:'弗拉门戈表演（塞维利亚）', note:'还在考虑中，待确定' },
+    { name:'加泰罗尼亚国家艺术博物馆 MNAC（巴塞罗那）', note:'还在考虑中，待确定' },
+    { name:'包车服务联系电话', note:'已确认付款，还差司机/客服联系电话，麻烦补充' }
+  ];
+  function renderTodo(){
+    $('todoMount').innerHTML = todo.map(t =>
+      `<li>${t.hot?'<span class="urgent">⚠ ':''}${t.name}${t.hot?'</span>':''}${t.hot?'<span class="tag hot">尽快</span>':''}<br><span style="color:var(--ink-soft); font-size:12.5px;">${t.note}</span></li>`
+    ).join('');
+  }
+
+  /* ================= 实用贴士 ================= */
+  const tips = [
+    '插座为欧标两孔圆形 Type C/F，220V，请带转换头；国内电器基本可直接用（无需变压器）',
+    '西班牙/葡萄牙不少商店午后有休息时段（约14:00–17:00），小城镇尤其明显，安排购物请避开',
+    '多数博物馆/古迹周一休馆，本行程已按此避开，但仍建议出发前一周再上官网核实一次开放时间',
+    '小费非强制，餐厅通常抹去零头或加5–10%即可，出租车一般不用给',
+    '包车师傅的联系方式和车牌号建议在出发前存进手机，方便接机时辨认',
+    '西班牙/葡萄牙治安整体不错，但热门景点、地铁站周边要留意扒手，贵重物品别放外袋',
+    '建议下载 Google Maps 离线地图（覆盖西班牙、葡萄牙），万一没信号也能导航',
+    '长途包车路段较多，建议随身带水和晕车药，特别是萨拉曼卡→波尔图、波尔图→里斯本这两段'
+  ];
+  function renderTips(){
+    $('tipsMount').innerHTML = tips.map(t => `<li>${t}</li>`).join('');
+  }
+
+  /* ================= 手绘风格 SVG 路线图 ================= */
+  function buildMap(){
+    const cities = [
+      {key:'madrid', name:'马德里', en:'Madrid', x:485, y:138},
+      {key:'toledo', name:'托莱多', en:'Toledo', x:461, y:181, small:true},
+      {key:'segovia', name:'塞哥维亚', en:'Segovia', x:453, y:94, small:true},
+      {key:'salamanca', name:'萨拉曼卡', en:'Salamanca', x:338, y:93},
+      {key:'porto', name:'波尔图', en:'Porto', x:117, y:78},
+      {key:'sintra', name:'辛特拉', en:'Sintra', x:58, y:266, small:true},
+      {key:'lisbon', name:'里斯本', en:'Lisbon', x:77, y:272},
+      {key:'faro', name:'法鲁', en:'Faro', x:168, y:408},
+      {key:'sevilla', name:'塞维利亚', en:'Sevilla', x:313, y:379},
+      {key:'ronda', name:'龙达', en:'Ronda', x:375, y:431},
+      {key:'granada', name:'格拉纳达', en:'Granada', x:493, y:396, small:true},
+      {key:'barcelona', name:'巴塞罗那', en:'Barcelona', x:925, y:59}
+    ];
+    const cityByKey = Object.fromEntries(cities.map(c => [c.key, c]));
+
+    // 手绘感：给直线加一点随机但固定的弯曲弧度
+    function wobblyPath(a, b, seed){
+      const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+      const dx = b.x-a.x, dy = b.y-a.y;
+      const len = Math.sqrt(dx*dx+dy*dy) || 1;
+      const nx = -dy/len, ny = dx/len;
+      const wig = ((seed * 37) % 17) - 8; // -8..8 的伪随机偏移
+      const cx = mx + nx*wig, cy = my + ny*wig;
+      return `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
+    }
+
+    const overnightSegments = [
+      { from:'madrid', via:['toledo'], to:'salamanca', via2:['segovia'], color:'var(--c1)' },
+      { from:'salamanca', to:'porto', color:'var(--c2)' },
+      { from:'porto', via:['sintra'], to:'lisbon', color:'var(--c3)' },
+      { from:'lisbon', to:'faro', color:'var(--c4)' },
+      { from:'faro', to:'sevilla', color:'var(--c5)' },
+      { from:'sevilla', to:'ronda', color:'var(--c6)' },
+      { from:'ronda', via:['granada'], to:'barcelona', color:'var(--c7)' }
+    ];
+
+    let paths = '';
+    let seed = 1;
+    overnightSegments.forEach(seg => {
+      const chain = [seg.from, ...(seg.via||[]), ...(seg.via2||[]), seg.to];
+      for(let i=0;i<chain.length-1;i++){
+        const a = cityByKey[chain[i]], b = cityByKey[chain[i+1]];
+        paths += `<path d="${wobblyPath(a,b,seed++)}" fill="none" stroke="${seg.color}" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>`;
+      }
+    });
+    // 托莱多是马德里出发的一日游支线，用虚线单独标
+    const madrid = cityByKey.madrid, toledo = cityByKey.toledo;
+    paths += `<path d="${wobblyPath(madrid,toledo,99)}" fill="none" stroke="var(--c0)" stroke-width="2" stroke-dasharray="4 4" opacity="0.7"/>`;
+
+    let markers = '';
+    cities.forEach(c => {
+      const r = c.small ? 3.5 : 5.5;
+      const overnight = ['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'].includes(c.key);
+      const color = `var(--c${['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'].indexOf(c.key) >= 0 ? ['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'].indexOf(c.key) : 0})`;
+      markers += `<a href="${navLink({q:c.en+' Spain Portugal'})}" target="_blank" rel="noopener">
+        <circle cx="${c.x}" cy="${c.y}" r="${r}" fill="${color}" stroke="var(--paper)" stroke-width="1.5"/>
+        ${overnight ? `<text x="${c.x}" y="${c.y-9}" text-anchor="middle" class="city-label">🛏</text>` : ''}
+        <text x="${c.x}" y="${c.y+16}" text-anchor="middle" class="city-label">${c.name}</text>
+        <text x="${c.x}" y="${c.y+26}" text-anchor="middle" class="city-en">${c.en}</text>
+      </a>`;
+    });
+
+    // 简化版半岛轮廓（手绘感：叠加轻微扰动的闭合路径）
+    const coast = `M 40,40 C 20,140 30,260 60,320 C 90,400 150,440 220,440
+      C 260,460 300,430 340,450 C 400,470 440,430 480,420 C 540,410 560,380 540,340
+      C 520,300 480,280 470,230 C 460,170 480,120 450,80 C 400,30 320,20 260,40
+      C 200,55 150,20 100,25 C 70,28 50,35 40,40 Z`;
+
+    const svg = `
+      <svg id="routeMap" viewBox="0 0 980 480" xmlns="http://www.w3.org/2000/svg">
+        <path d="${coast}" fill="var(--line-soft)" opacity="0.5" stroke="var(--line)" stroke-width="1.5"/>
+        ${paths}
+        ${markers}
+      </svg>`;
+    $('mapMount').innerHTML = svg;
+
+    const legendCities = ['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'];
+    const legendNames = ['马德里','萨拉曼卡','波尔图','里斯本','法鲁','塞维利亚','龙达','巴塞罗那'];
+    $('mapLegend').innerHTML = legendCities.map((k,i) =>
+      `<span><span class="dot" style="background:var(--c${i})"></span>${legendNames[i]}</span>`
+    ).join('');
+  }
+
+  /* ================= 倒计时：What's next（UTC 换算，跨时区不会错） ================= */
+  const keyMoments = [
+    { label:'CX315 香港 → 马德里 起飞', iso:'2026-09-22T00:45:00+08:00' },
+    { label:'CX315 抵达马德里', iso:'2026-09-22T09:15:00+02:00' },
+    { label:'阿尔罕布拉宫 (Alhambra) 入场', iso:'2026-10-03T15:30:00+02:00' },
+    { label:'VY2015 格拉纳达 → 巴塞罗那 起飞', iso:'2026-10-03T19:30:00+02:00' },
+    { label:'圣家堂 (Sagrada Família) 入场', iso:'2026-10-05T12:45:00+02:00' },
+    { label:'包车送机（巴塞罗那）', iso:'2026-10-07T19:50:00+02:00' },
+    { label:'QR142 巴塞罗那 → 多哈 起飞', iso:'2026-10-07T22:50:00+02:00' },
+    { label:'QR816 多哈 → 香港 起飞', iso:'2026-10-08T09:00:00+03:00' },
+    { label:'QR816 抵达香港', iso:'2026-10-08T21:55:00+08:00' }
+  ];
+
+  function updateCountdown(){
+    const now = Date.now();
+    const next = keyMoments.find(m => new Date(m.iso).getTime() > now);
+    if(!next){
+      $('nextLabel').textContent = '行程已结束，欢迎回家 🏠';
+      $('cd-d').textContent='0'; $('cd-h').textContent='0'; $('cd-m').textContent='0';
+      $('nextLocal').textContent = '';
+      return;
+    }
+    const diff = new Date(next.iso).getTime() - now;
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    $('nextLabel').textContent = next.label;
+    $('cd-d').textContent = d; $('cd-h').textContent = h; $('cd-m').textContent = m;
+    $('nextLocal').textContent = '当地时间 ' + new Date(next.iso).toLocaleString('zh-CN', {
+      month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false, timeZone: next.iso.includes('+08:00') ? 'Asia/Hong_Kong' : (next.iso.includes('+03:00') ? 'Asia/Qatar' : 'Europe/Madrid')
+    });
+  }
+
+  renderBookings();
+  renderDays();
+  renderTodo();
+  renderTips();
+  buildMap();
+  updateCountdown();
+  setInterval(updateCountdown, 30000);
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+  }
+})();
+</script>
+</body>
+</html>
