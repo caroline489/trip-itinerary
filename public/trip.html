@@ -145,6 +145,37 @@
     background: var(--line-soft); color: var(--ink-soft);
   }
   .plain-list .tag.hot{ background: var(--owe); color:#fff; }
+  .todo-li{ padding:0; }
+  .todo-row{ display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:8px 0; }
+  .todo-check{ width:19px; height:19px; margin-top:2px; flex:0 0 auto; accent-color: var(--teal); cursor:pointer; }
+  .todo-text{ flex:1 1 auto; font-size:14px; }
+  .todo-note{ color:var(--ink-soft); font-size:12.5px; }
+  .todo-li.done .todo-text{ text-decoration: line-through; color: var(--ink-soft); }
+  .todo-li.done .todo-note{ text-decoration:none; color: var(--owed); font-weight:600; }
+
+  /* ---------- Confirm modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:50;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-card{
+    background: var(--paper-raised); border-radius: var(--radius); padding:20px;
+    max-width:340px; width:100%; box-shadow:0 10px 30px rgba(0,0,0,0.25);
+  }
+  .modal-title{ font-family:var(--font-serif); font-weight:700; font-size:16px; color:var(--teal-deep); margin-bottom:12px; }
+  .modal-card input[type=text]{
+    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px;
+    background:#fff; color:var(--ink); font-family:var(--font-sans); font-size:15px; outline:none;
+  }
+  .modal-card input[type=text]:focus{ border-color: var(--teal); }
+  .modal-card .field-label{ display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:5px; }
+  .modal-card input{ margin-bottom:0; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+  .btn{ border:none; border-radius:8px; padding:9px 16px; font-family:var(--font-sans); font-weight:600; font-size:14px; cursor:pointer; }
+  .btn-primary{ background: var(--teal); color:#fff; }
+  .btn-primary:hover{ background: var(--teal-deep); }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); }
+  .btn-ghost:hover{ border-color:var(--owe); color:var(--owe); }
 
   footer{ margin-top:36px; font-size:12px; color:var(--ink-soft); text-align:center; }
 </style>
@@ -287,8 +318,9 @@
         addr:'Avinguda de la República Argentina, 5, Barcelona, Spain', phone:'（Airbnb 站内联系房东 Carlos）' }
     ],
     tickets: [
-      { title:'阿尔罕布拉宫 Alhambra', when:'2026-10-03　15:30 入场', meta:'⚠️ 当天需赶19:30航班，时间偏紧，详见当日行程提醒' },
-      { title:'圣家堂 Sagrada Família', when:'2026-10-05　12:45 入场', meta:'含塔楼 Tower 13:30' }
+      { title:'阿尔罕布拉宫 Alhambra', when:'2026-10-03　15:30 入场', meta:'纳塞瑞斯皇宫 Nasrid Palaces 时段已确认就是15:30，一入场直接先去；当天仍需赶19:30航班，详见当日行程提醒' },
+      { title:'圣家堂 Sagrada Família', when:'2026-10-05　12:45 入场', meta:'含塔楼 Tower 13:30' },
+      { title:"巴特罗之家 Casa Batlló · Be The First（清晨场）", when:'2026-10-06　08:45 入场', meta:'成人2张 · €90.00 · 比一般9:00开放更早，人少，但当天不能睡懒觉' }
     ]
   };
 
@@ -334,7 +366,7 @@
 
     { id:'d2', date:'2026-09-23', wd:'周三', city:'马德里 Madrid', color:CITY_COLOR.madrid,
       items:[
-        {t:'上午', est:true, label:`${placeLink('马德里王宫 (Royal Palace of Madrid)',{q:'Palacio Real de Madrid'})}`, book:true},
+        {t:'上午', est:true, label:`${placeLink('马德里王宫 (Royal Palace of Madrid)',{q:'Palacio Real de Madrid'})}`, book:true, id:'ticket-madrid-palace'},
         {t:'', est:true, label:`${placeLink('太阳门广场 (Puerta del Sol)',{q:'Puerta del Sol Madrid'})}`},
         {t:'下午', est:true, label:`${placeLink('丽池公园 (Parque del Retiro)',{q:'Parque del Retiro Madrid'})}`},
         {t:'', est:true, label:`德波神庙 (Templo de Debod)、圣米盖尔市场 (Mercado de San Miguel)`}
@@ -345,8 +377,8 @@
     { id:'d3', date:'2026-09-24', wd:'周四', city:'托莱多 Toledo（马德里出发一日游）', color:CITY_COLOR.madrid,
       items:[
         {t:'全天', est:true, label:`包车前往 ${placeLink('托莱多古城 (Toledo)',{q:'Toledo Spain'})}`},
-        {t:'', est:true, label:`${placeLink('托莱多大教堂 (Toledo Cathedral)',{q:'Catedral de Toledo'})}`, book:true},
-        {t:'', est:true, label:`${placeLink('托莱多城堡 (Alcázar de Toledo)',{q:'Alcázar de Toledo'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('托莱多大教堂 (Toledo Cathedral)',{q:'Catedral de Toledo'})}`, book:true, id:'ticket-toledo-cathedral'},
+        {t:'', est:true, label:`${placeLink('托莱多城堡 (Alcázar de Toledo)',{q:'Alcázar de Toledo'})}`, book:true, id:'ticket-toledo-alcazar'},
         {t:'傍晚', est:true, label:`${placeLink('山谷瞭望台 (Mirador del Valle)',{q:'Mirador del Valle Toledo'})}`}
       ],
       overnight:'Ocean Drive Madrid（连住）',
@@ -356,9 +388,9 @@
       warn:'一天内跑两座城，车程加游览约3小时+，塞哥维亚建议控制在2小时内（主教堂+城堡外观为主）',
       items:[
         {t:'上午', est:true, label:`包车离开马德里 → ${placeLink('塞哥维亚主教堂 (Segovia Cathedral)',{q:'Catedral de Segovia'})}`},
-        {t:'', est:true, label:`${placeLink('塞哥维亚城堡 (Alcázar of Segovia)',{q:'Alcázar of Segovia'})}`, book:true},
+        {t:'', est:true, label:`${placeLink('塞哥维亚城堡 (Alcázar of Segovia)',{q:'Alcázar of Segovia'})}`, book:true, id:'ticket-segovia-alcazar'},
         {t:'', est:true, label:`${placeLink('塞哥维亚输水道 (Aqueduct of Segovia)',{q:'Aqueduct of Segovia'})}`},
-        {t:'下午', est:true, label:`前往萨拉曼卡，${placeLink('萨拉曼卡大学 (University of Salamanca)',{q:'University of Salamanca'})}`, book:true},
+        {t:'下午', est:true, label:`前往萨拉曼卡，${placeLink('萨拉曼卡大学 (University of Salamanca)',{q:'University of Salamanca'})}`, book:true, id:'ticket-salamanca-university'},
         {t:'', est:true, label:`${placeLink('罗马桥 (Roman Bridge)',{q:'Puente Romano Salamanca'})}`}
       ],
       overnight:'NH Collection Salamanca Palacio de Castellanos',
@@ -377,10 +409,10 @@
 
     { id:'d6', date:'2026-09-27', wd:'周日', city:'波尔图 Porto', color:CITY_COLOR.porto,
       items:[
-        {t:'上午', est:true, label:`${placeLink('莱罗书店 (Livraria Lello)',{q:'Livraria Lello Porto'})}`, book:true},
-        {t:'', est:true, label:`${placeLink('波尔图证券交易所宫 (Palácio da Bolsa)',{q:'Palácio da Bolsa Porto'})}`, book:true},
+        {t:'上午', est:true, label:`${placeLink('莱罗书店 (Livraria Lello)',{q:'Livraria Lello Porto'})}`, book:true, id:'ticket-lello'},
+        {t:'', est:true, label:`${placeLink('波尔图证券交易所宫 (Palácio da Bolsa)',{q:'Palácio da Bolsa Porto'})}`, book:true, id:'ticket-bolsa'},
         {t:'下午', est:true, label:`${placeLink('雷贝拉广场 (Praça da Ribeira)',{q:'Praça da Ribeira Porto'})} 老城漫步`},
-        {t:'傍晚', est:true, label:`${placeLink('桑德曼酒窖品酒 (Sandeman Cellars)',{q:'Sandeman Cellars Porto'})}〔待订〕`}
+        {t:'傍晚', est:true, label:`${placeLink('桑德曼酒窖品酒 (Sandeman Cellars)',{q:'Sandeman Cellars Porto'})}〔待订〕`, id:'ticket-sandeman'}
       ],
       overnight:'Porto Royal Bridges（连住）',
       stops:[{q:'Livraria Lello Porto'},{q:'Palácio da Bolsa Porto'},{q:'Praça da Ribeira Porto'},{q:'Sandeman Cellars Porto'}] },
@@ -388,7 +420,7 @@
     { id:'d7', date:'2026-09-28', wd:'周一', city:'波尔图 → 辛特拉 → 里斯本', color:CITY_COLOR.lisbon,
       items:[
         {t:'全天', est:true, label:'包车长途前往里斯本（约300公里）'},
-        {t:'', est:true, label:`途经 ${placeLink('佩纳宫 (Pena Palace)',{q:'Pena Palace Sintra'})}`, book:true},
+        {t:'', est:true, label:`途经 ${placeLink('佩纳宫 (Pena Palace)',{q:'Pena Palace Sintra'})}`, book:true, id:'ticket-pena'},
         {t:'', est:true, label:`${placeLink('辛特拉小镇 (Sintra)',{q:'Sintra Portugal'})}`},
         {t:'', est:true, label:`${placeLink('罗卡角 (Cabo da Roca)',{q:'Cabo da Roca'})}`}
       ],
@@ -397,8 +429,8 @@
 
     { id:'d8', date:'2026-09-29', wd:'周二', city:'里斯本 Lisbon', color:CITY_COLOR.lisbon,
       items:[
-        {t:'上午', est:true, label:`${placeLink('热罗尼姆修道院 (Jerónimos Monastery)',{q:'Jerónimos Monastery Lisbon'})}`, book:true},
-        {t:'', est:true, label:`${placeLink('贝伦塔 (Belém Tower)',{q:'Belém Tower Lisbon'})}`, book:true},
+        {t:'上午', est:true, label:`${placeLink('热罗尼姆修道院 (Jerónimos Monastery)',{q:'Jerónimos Monastery Lisbon'})}`, book:true, id:'ticket-jeronimos'},
+        {t:'', est:true, label:`${placeLink('贝伦塔 (Belém Tower)',{q:'Belém Tower Lisbon'})}`, book:true, id:'ticket-belem'},
         {t:'', est:true, label:`${placeLink('发现者纪念碑 (Padrão dos Descobrimentos)',{q:'Padrão dos Descobrimentos'})}`},
         {t:'下午', est:true, label:`${placeLink('自由大道 (Avenida da Liberdade)',{q:'Avenida da Liberdade Lisbon'})}`}
       ],
@@ -418,17 +450,17 @@
       warn:'车程约2.5小时，若中午才出发，塞维利亚王宫可能来不及在闭馆前进入，建议法鲁尽量早出发',
       items:[
         {t:'上午', est:true, label:'早出发，包车前往塞维利亚（约2.5小时车程）'},
-        {t:'下午', est:true, label:`${placeLink('塞维利亚王宫 (Real Alcázar de Sevilla)',{q:'Real Alcázar de Sevilla'})}`, book:true},
+        {t:'下午', est:true, label:`${placeLink('塞维利亚王宫 (Real Alcázar de Sevilla)',{q:'Real Alcázar de Sevilla'})}`, book:true, id:'ticket-alcazar-sevilla'},
         {t:'', est:true, label:`${placeLink('圣十字区 (Barrio Santa Cruz)',{q:'Barrio Santa Cruz Sevilla'})}`},
         {t:'', est:true, label:`${placeLink('西班牙广场 (Plaza de España)',{q:'Plaza de España Sevilla'})}`},
-        {t:'晚上', est:true, label:'弗拉门戈表演 (Flamenco show)〔待订〕'}
+        {t:'晚上', est:true, label:'弗拉门戈表演 (Flamenco show)〔待订〕', id:'ticket-flamenco'}
       ],
       overnight:'Hotel Sevilla Center',
       stops:[{q:'Real Alcázar de Sevilla'},{q:'Barrio Santa Cruz Sevilla'},{q:'Plaza de España Sevilla'}] },
 
     { id:'d11', date:'2026-10-02', wd:'周五', city:'塞维利亚 → 龙达', color:CITY_COLOR.ronda,
       items:[
-        {t:'上午', est:true, label:`${placeLink('塞维利亚大教堂 (Seville Cathedral)',{q:'Seville Cathedral'})}`, book:true},
+        {t:'上午', est:true, label:`${placeLink('塞维利亚大教堂 (Seville Cathedral)',{q:'Seville Cathedral'})}`, book:true, id:'ticket-catedral-sevilla'},
         {t:'', est:true, label:`${placeLink('都市阳伞 (Metropol Parasol)',{q:'Metropol Parasol Sevilla'})}`},
         {t:'下午', est:true, label:'包车前往龙达'},
         {t:'', est:true, label:`${placeLink('斗牛广场 (Plaza de Toros)',{q:'Plaza de Toros Ronda'})}`},
@@ -438,12 +470,16 @@
       stops:[{q:'Seville Cathedral'},{q:'Metropol Parasol Sevilla'},{q:'Plaza de Toros Ronda'},{q:'Puente Nuevo Ronda'}] },
 
     { id:'d12', date:'2026-10-03', wd:'周六', city:'龙达 → 格拉纳达 → 巴塞罗那', color:CITY_COLOR.barcelona,
-      warn:'高风险日：15:30入阿尔罕布拉宫，游览2–3小时后还要赶到机场（车程约25–30分钟+值机），缓冲只有1.5小时左右，建议不要在阿尔罕布拉宫之外再排其他行程',
+      warn:'纳塞瑞斯皇宫 (Nasrid Palaces) 时段已确认就是15:30，一入场可直接先进纳塞瑞斯皇宫，风险比原本预期的低，但离场后仍要赶19:30航班，建议按下方节奏走，别临时加行程',
       items:[
-        {t:'上午', est:true, label:'包车前往格拉纳达'},
-        {t:'', est:true, label:`${placeLink('阿尔拜辛区 (Albaicín)',{q:'Albaicín Granada'})} / ${placeLink('圣尼古拉斯观景台',{q:'Mirador San Nicolás Granada'})}`},
-        {t:'15:30', label:`${placeLink('阿尔罕布拉宫 (Alhambra)',{q:'Alhambra Granada'})} 入场（已订）`},
-        {t:'约18:00', est:true, label:'包车 → 格拉纳达机场'},
+        {t:'08:30', est:true, label:'退房，包车离开龙达（车程约2小时）'},
+        {t:'约11:00', est:true, label:'抵达格拉纳达，行李留车上'},
+        {t:'11:00-12:30', est:true, label:`${placeLink('阿尔拜辛区 (Albaicín)',{q:'Albaicín Granada'})} / ${placeLink('圣尼古拉斯观景台',{q:'Mirador San Nicolás Granada'})}`},
+        {t:'12:30-13:30', est:true, label:'午餐'},
+        {t:'13:30-15:15', est:true, label:'自由活动 / 提前到阿尔罕布拉宫周边'},
+        {t:'15:30', label:`${placeLink('阿尔罕布拉宫 (Alhambra)',{q:'Alhambra Granada'})} 入场（已订）· 纳塞瑞斯皇宫时段确认就是15:30，一进场先去这里`},
+        {t:'最晚17:45', est:true, label:'务必离场，包车在出口（Puerta de la Justicia 附近）等，一下场就上车'},
+        {t:'约18:15-18:30', est:true, label:'抵达格拉纳达机场'},
         {t:'19:30', label:'VY2015 格拉纳达 → 巴塞罗那 起飞'},
         {t:'21:00', label:'抵达巴塞罗那，入住 Airbnb'}
       ],
@@ -453,7 +489,7 @@
     { id:'d13', date:'2026-10-04', wd:'周日', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
       items:[
         {t:'上午', est:true, label:`${placeLink('蒂比达博 (Tibidabo)',{q:'Tibidabo Barcelona'})}`},
-        {t:'下午', est:true, label:`${placeLink('奎尔公园 (Park Güell)',{q:'Park Güell'})}`, book:true}
+        {t:'下午', est:true, label:`${placeLink('奎尔公园 (Park Güell)',{q:'Park Güell'})}`, book:true, id:'ticket-park-guell'}
       ],
       overnight:"Charles' Apartments（连住）",
       stops:[{q:'Tibidabo Barcelona'},{q:'Park Güell'}] },
@@ -468,10 +504,10 @@
 
     { id:'d15', date:'2026-10-06', wd:'周二', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
       items:[
-        {t:'08:00', label:`${placeLink('巴特罗之家 (Casa Batlló)',{q:'Casa Batlló'})}`, book:true},
-        {t:'10:00', label:`${placeLink('米拉之家 (Casa Milà)',{q:'Casa Milà'})}`, book:true},
+        {t:'08:45', label:`${placeLink('巴特罗之家 (Casa Batlló) · Be The First 清晨场（已订）',{q:'Casa Batlló'})}`},
+        {t:'10:00', label:`${placeLink('米拉之家 (Casa Milà)',{q:'Casa Milà'})}`, book:true, id:'ticket-casa-mila'},
         {t:'下午', est:true, label:`${placeLink('哥特区 (Gothic Quarter)',{q:'Barri Gòtic Barcelona'})} / 兰布拉大道 (La Rambla)`},
-        {t:'', est:true, label:`加泰罗尼亚国家艺术博物馆 (MNAC)〔待订〕`}
+        {t:'', est:true, label:`加泰罗尼亚国家艺术博物馆 (MNAC)〔待订〕`, id:'ticket-mnac'}
       ],
       overnight:"Charles' Apartments（连住）",
       stops:[{q:'Casa Batlló'},{q:'Casa Milà'},{q:'Barri Gòtic Barcelona'}] },
@@ -495,23 +531,27 @@
       stops:[] }
   ];
 
+  function buildDayBodyHtml(d){
+    const nav = dayNavLink(d.stops);
+    let body = '';
+    if(d.warn) body += `<div class="warn-banner">⚠️ ${d.warn}</div>`;
+    if(nav) body += `<a class="day-nav-btn" href="${nav}" target="_blank" rel="noopener">🧭 一键打开当日路线导航</a>`;
+    d.items.forEach(it => {
+      body += `<div class="timeline-item"><div class="ti-time${it.est?' est':''}">${it.t}</div>
+        <div class="ti-content">${it.label}${it.book?'<span class="book-flag">建议预订</span>':''}</div></div>`;
+    });
+    if(d.overnight && d.overnight !== '—') body += `<div class="overnight-note">🛏 当晚入住：${d.overnight}</div>`;
+    const hasEst = d.items.some(it => it.est);
+    if(hasEst) body += `<div class="est-note">* 为预估时段，具体以当天实际安排为准</div>`;
+    return body;
+  }
+
   function renderDays(){
     const mount = $('daysMount');
     days.forEach(d => {
       const card = document.createElement('div');
       card.className = 'day-card';
-      const nav = dayNavLink(d.stops);
-      let body = '';
-      if(d.warn) body += `<div class="warn-banner">⚠️ ${d.warn}</div>`;
-      if(nav) body += `<a class="day-nav-btn" href="${nav}" target="_blank" rel="noopener">🧭 一键打开当日路线导航</a>`;
-      d.items.forEach(it => {
-        body += `<div class="timeline-item"><div class="ti-time${it.est?' est':''}">${it.t}</div>
-          <div class="ti-content">${it.label}${it.book?'<span class="book-flag">建议预订</span>':''}</div></div>`;
-      });
-      if(d.overnight && d.overnight !== '—') body += `<div class="overnight-note">🛏 当晚入住：${d.overnight}</div>`;
-      const hasEst = d.items.some(it => it.est);
-      if(hasEst) body += `<div class="est-note">* 为预估时段，具体以当天实际安排为准</div>`;
-
+      card.dataset.id = d.id;
       card.innerHTML = `
         <div class="day-head">
           <div class="d-left">
@@ -523,7 +563,7 @@
             <span class="day-caret">▸</span>
           </div>
         </div>
-        <div class="day-body">${body}</div>`;
+        <div class="day-body">${buildDayBodyHtml(d)}</div>`;
       card.querySelector('.day-head').addEventListener('click', () => card.classList.toggle('open'));
       mount.appendChild(card);
     });
@@ -538,30 +578,175 @@
 
   /* ================= 待办清单 ================= */
   const todo = [
-    { name:'莱罗书店 Livraria Lello（波尔图）', hot:true, note:'游客极多，常提前1个月售罄，务必尽早订', url:'https://www.livrarialello.pt/' },
-    { name:'佩纳宫 Pena Palace（辛特拉）', hot:true, note:'分时段入场，周末常额满', url:'https://www.parquesdesintra.pt/' },
-    { name:'塞维利亚王宫 Real Alcázar de Sevilla', hot:true, note:'分时段票常提前数日售罄', url:'https://www.alcazarsevilla.org/' },
-    { name:'奎尔公园 Park Güell（巴塞罗那）', hot:true, note:'付费区强制预约，现场不卖票', url:'https://parkguell.barcelona/' },
-    { name:'巴特罗之家 Casa Batlló（巴塞罗那）', hot:true, note:'热门度极高，建议尽快订', url:'https://www.casabatllo.es/' },
-    { name:'马德里王宫 Royal Palace of Madrid', note:'旺季建议线上购票', url:'https://www.patrimonionacional.es/visita/palacio-real-de-madrid' },
-    { name:'托莱多大教堂 Toledo Cathedral', note:'建议线上购票避免排队', url:'https://catedralprimada.es/' },
-    { name:'托莱多城堡 Alcázar de Toledo（军事博物馆）', note:'建议线上购票避免排队', url:'https://museo.ejercito.es/' },
-    { name:'塞哥维亚城堡 Alcázar of Segovia', note:'塔楼登顶名额有限', url:'https://www.alcazardesegovia.com/' },
-    { name:'萨拉曼卡大学', note:'限流参观，建议提前', url:'https://www.usal.es/edificio-historico' },
-    { name:'波尔图证券交易所宫 Palácio da Bolsa', note:'仅可跟随导览参观，建议先订场次', url:'https://www.palaciodabolsa.com/' },
-    { name:'热罗尼姆修道院 Jerónimos Monastery（里斯本）', note:'建议提前线上购票', url:'https://www.mosteirojeronimos.gov.pt/' },
-    { name:'贝伦塔 Belém Tower（里斯本）', note:'建议提前线上购票', url:'https://www.torrebelem.gov.pt/' },
-    { name:'塞维利亚大教堂 + 希拉尔达塔', note:'旺季当日票常售罄', url:'https://www.catedraldesevilla.es/' },
-    { name:'米拉之家 Casa Milà（巴塞罗那）', note:'建议提前，比巴特罗之家稍宽松', url:'https://www.lapedrera.com/' },
-    { name:'加泰罗尼亚国家艺术博物馆 MNAC（巴塞罗那）', note:'还在考虑中，待确定', url:'https://www.museunacional.cat/' },
-    { name:'波尔图酒窖品酒 Sandeman Cellars', note:'还在考虑中，待确定', url:'https://www.sandeman.com/visit-us/porto/' },
-    { name:'弗拉门戈表演（塞维利亚）', note:'还在考虑中，场地未定，暂无固定官方链接' },
-    { name:'包车服务联系电话', note:'已确认付款，还差司机/客服联系电话，麻烦补充' }
+    { name:'莱罗书店 Livraria Lello（波尔图）', hot:true, note:'游客极多，常提前1个月售罄，务必尽早订', url:'https://www.livrarialello.pt/', target:'ticket-lello' },
+    { name:'佩纳宫 Pena Palace（辛特拉）', hot:true, note:'分时段入场，周末常额满', url:'https://www.parquesdesintra.pt/', target:'ticket-pena' },
+    { name:'塞维利亚王宫 Real Alcázar de Sevilla', hot:true, note:'分时段票常提前数日售罄', url:'https://www.alcazarsevilla.org/', target:'ticket-alcazar-sevilla' },
+    { name:'奎尔公园 Park Güell（巴塞罗那）', hot:true, note:'付费区强制预约，现场不卖票', url:'https://parkguell.barcelona/', target:'ticket-park-guell' },
+    { name:'马德里王宫 Royal Palace of Madrid', note:'旺季建议线上购票', url:'https://www.patrimonionacional.es/visita/palacio-real-de-madrid', target:'ticket-madrid-palace' },
+    { name:'托莱多大教堂 Toledo Cathedral', note:'建议线上购票避免排队', url:'https://catedralprimada.es/', target:'ticket-toledo-cathedral' },
+    { name:'托莱多城堡 Alcázar de Toledo（军事博物馆）', note:'建议线上购票避免排队', url:'https://museo.ejercito.es/', target:'ticket-toledo-alcazar' },
+    { name:'塞哥维亚城堡 Alcázar of Segovia', note:'塔楼登顶名额有限', url:'https://www.alcazardesegovia.com/', target:'ticket-segovia-alcazar' },
+    { name:'萨拉曼卡大学', note:'限流参观，建议提前', url:'https://www.usal.es/edificio-historico', target:'ticket-salamanca-university' },
+    { name:'波尔图证券交易所宫 Palácio da Bolsa', note:'仅可跟随导览参观，建议先订场次', url:'https://www.palaciodabolsa.com/', target:'ticket-bolsa' },
+    { name:'热罗尼姆修道院 Jerónimos Monastery（里斯本）', note:'建议提前线上购票', url:'https://www.mosteirojeronimos.gov.pt/', target:'ticket-jeronimos' },
+    { name:'贝伦塔 Belém Tower（里斯本）', note:'建议提前线上购票', url:'https://www.torrebelem.gov.pt/', target:'ticket-belem' },
+    { name:'塞维利亚大教堂 + 希拉尔达塔', note:'旺季当日票常售罄', url:'https://www.catedraldesevilla.es/', target:'ticket-catedral-sevilla' },
+    { name:'米拉之家 Casa Milà（巴塞罗那）', note:'建议提前，比巴特罗之家稍宽松', url:'https://www.lapedrera.com/', target:'ticket-casa-mila' },
+    { name:'加泰罗尼亚国家艺术博物馆 MNAC（巴塞罗那）', note:'还在考虑中，待确定', url:'https://www.museunacional.cat/', target:'ticket-mnac' },
+    { name:'波尔图酒窖品酒 Sandeman Cellars', note:'还在考虑中，待确定', url:'https://www.sandeman.com/visit-us/porto/', target:'ticket-sandeman' },
+    { name:'弗拉门戈表演（塞维利亚）', note:'还在考虑中，场地未定，暂无固定官方链接', target:'ticket-flamenco' },
+    { name:'包车服务联系电话', note:'已确认付款，还差司机/客服联系电话，麻烦补充', target:'car-phone', q1:'司机或客服的联系电话是？' }
   ];
+
+  /* ---------------- 待办勾选 → 弹窗问时间 → 更新行程 ---------------- */
+  const todoState = {}; // { [target]: { done:true, info:'...', note:'...' } }
+  const originalLabels = {}; // 记录每个 id 原始文案，方便取消勾选时还原
+
+  function findItemById(id){
+    for(const d of days){
+      const it = (d.items||[]).find(x => x.id === id);
+      if(it) return {day:d, item:it};
+    }
+    return null;
+  }
+
+  function applyConfirmed(target, info){
+    if(target === 'car-phone'){
+      bookings.car[2].meta = `联系电话：${info}`;
+      renderBookings();
+      return;
+    }
+    const found = findItemById(target);
+    if(!found) return;
+    const { day, item } = found;
+    if(originalLabels[target] === undefined) originalLabels[target] = { t:item.t, label:item.label, book:item.book };
+    item.label = item.label.replace('〔待订〕', '') + `（已订 ${info}）`;
+    item.book = false;
+    renderDayBody(day);
+  }
+
+  function revertConfirmed(target){
+    if(target === 'car-phone'){
+      bookings.car[2].meta = '联系电话：待补充 ⚠️';
+      renderBookings();
+      return;
+    }
+    const found = findItemById(target);
+    const orig = originalLabels[target];
+    if(!found || !orig) return;
+    found.item.t = orig.t; found.item.label = orig.label; found.item.book = orig.book;
+    renderDayBody(found.day);
+  }
+
+  function renderDayBody(day){
+    // 找到该天对应的卡片重新渲染 body 部分（复用 renderDays 里同样的拼装逻辑）
+    const card = document.querySelector(`.day-card[data-id="${day.id}"]`);
+    if(!card) return;
+    card.querySelector('.day-body').innerHTML = buildDayBodyHtml(day);
+  }
+
+  function openConfirmModal(t, checkboxEl){
+    const q1 = t.q1 || '确认的日期/时间是？';
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-title">${t.name}</div>
+        <label class="field-label">${q1}</label>
+        <input type="text" id="modalQ1" placeholder="例如 10:00 / 9月24日上午场">
+        <label class="field-label" style="margin-top:10px;">备注（可留空）</label>
+        <input type="text" id="modalQ2" placeholder="想额外记一句的话">
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="modalCancel">取消</button>
+          <button class="btn btn-primary" id="modalOk">确认</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('modalQ1').focus();
+    const close = () => { overlay.remove(); };
+    document.getElementById('modalCancel').addEventListener('click', () => { checkboxEl.checked = false; close(); });
+    overlay.addEventListener('click', (e) => { if(e.target === overlay){ checkboxEl.checked = false; close(); } });
+    document.getElementById('modalOk').addEventListener('click', () => {
+      const v1 = document.getElementById('modalQ1').value.trim();
+      const v2 = document.getElementById('modalQ2').value.trim();
+      if(!v1){ document.getElementById('modalQ1').focus(); return; }
+      const info = v2 ? `${v1} · ${v2}` : v1;
+      todoState[t.target] = { done:true, info };
+      applyConfirmed(t.target, info);
+      renderTodo();
+      queueSaveTodo();
+      close();
+    });
+  }
+
+  function onTodoCheck(t, checkboxEl){
+    if(checkboxEl.checked){
+      openConfirmModal(t, checkboxEl);
+    } else {
+      delete todoState[t.target];
+      revertConfirmed(t.target);
+      renderTodo();
+      queueSaveTodo();
+    }
+  }
   function renderTodo(){
-    $('todoMount').innerHTML = todo.map(t =>
-      `<li>${t.hot?'<span class="urgent">⚠ ':''}${t.name}${t.hot?'</span>':''}${t.hot?'<span class="tag hot">尽快</span>':''}<br><span style="color:var(--ink-soft); font-size:12.5px;">${t.note}${t.url?` · <a href="${t.url}" target="_blank" rel="noopener">官方订票 ↗</a>`:''}</span></li>`
-    ).join('');
+    const mount = $('todoMount');
+    mount.innerHTML = '';
+    todo.forEach(t => {
+      const state = todoState[t.target];
+      const li = document.createElement('li');
+      li.className = 'todo-li' + (state && state.done ? ' done' : '');
+      li.innerHTML = `
+        <label class="todo-row">
+          <input type="checkbox" class="todo-check" ${state && state.done ? 'checked' : ''}>
+          <span class="todo-text">
+            ${t.hot && !(state&&state.done) ? '<span class="urgent">⚠ ' : ''}${t.name}${t.hot && !(state&&state.done) ? '</span>' : ''}${t.hot && !(state&&state.done) ? '<span class="tag hot">尽快</span>' : ''}
+            <br><span class="todo-note">${state && state.done ? `已订：${state.info}` : t.note}${t.url && !(state&&state.done) ? ` · <a href="${t.url}" target="_blank" rel="noopener">官方订票 ↗</a>` : ''}</span>
+          </span>
+        </label>`;
+      const cb = li.querySelector('.todo-check');
+      cb.addEventListener('change', () => onTodoCheck(t, cb));
+      mount.appendChild(li);
+    });
+  }
+
+  /* ================= 待办状态：Worker + KV 共享同步 ================= */
+  const TODO_API = '/api/trip-todo';
+  const TODO_LOCAL_KEY = 'trip-todo-state-v1';
+  let todoSaveTimer = null;
+
+  async function loadTodoState(){
+    try{
+      const local = localStorage.getItem(TODO_LOCAL_KEY);
+      if(local) Object.assign(todoState, JSON.parse(local));
+    }catch(err){}
+    Object.entries(todoState).forEach(([target, s]) => { if(s.done) applyConfirmed(target, s.info); });
+    renderTodo(); renderBookings();
+
+    try{
+      const res = await fetch(TODO_API, { cache:'no-store' });
+      if(res.ok){
+        const text = await res.text();
+        if(text && text !== '{}'){
+          const remote = JSON.parse(text);
+          Object.assign(todoState, remote);
+          localStorage.setItem(TODO_LOCAL_KEY, text);
+          Object.entries(todoState).forEach(([target, s]) => { if(s.done) applyConfirmed(target, s.info); });
+          renderTodo(); renderBookings();
+        }
+      }
+    }catch(err){ /* 离线：用本地缓存即可 */ }
+  }
+
+  function queueSaveTodo(){
+    clearTimeout(todoSaveTimer);
+    todoSaveTimer = setTimeout(async () => {
+      const json = JSON.stringify(todoState);
+      try{ localStorage.setItem(TODO_LOCAL_KEY, json); }catch(err){}
+      try{
+        await fetch(TODO_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body: json });
+      }catch(err){ /* 离线：等下次有网络自动重试（load 时会拉取） */ }
+    }, 350);
   }
 
   /* ================= 实用贴士 ================= */
@@ -743,6 +928,7 @@
   buildCalendar();
   updateCountdown();
   setInterval(updateCountdown, 30000);
+  loadTodoState();
 
   if('serviceWorker' in navigator){
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
