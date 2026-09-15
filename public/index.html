@@ -280,6 +280,14 @@
     </div>
   </section>
 
+  <!-- Prep -->
+  <section>
+    <h2>行前准备 <span class="en">Pre-trip prep</span></h2>
+    <div class="card">
+      <ul class="plain-list" id="prepMount"></ul>
+    </div>
+  </section>
+
   <!-- Tips -->
   <section>
     <h2>实用贴士 <span class="en">Tips</span></h2>
@@ -1032,6 +1040,48 @@
     wireNoteInputs(mount);
   }
 
+  /* ================= 行前准备：跟门票分开，只列重要的 ================= */
+  const prep = [
+    { id:'prep-passport', name:'护照有效期检查', note:'从10/8回程日算起，剩余有效期建议6个月以上' },
+    { id:'prep-visa', name:'确认签证要求', note:'看清楚护照类型是否需要申根签证，HK特区护照通常免签，其他证件类型务必提前确认' },
+    { id:'prep-insurance', name:'买旅行保险', note:'涵盖欧洲医疗、长途飞行延误/转机风险' },
+    { id:'prep-card', name:'通知银行海外用卡', note:'确认信用卡能在欧洲刷、额度够' },
+    { id:'prep-cash', name:'换一些欧元现金', note:'小镇、小费、临时用车会用到' },
+    { id:'prep-adapter', name:'买欧标转换插头', note:'Type C/F 两孔圆形' },
+    { id:'prep-esim', name:'开通国际漫游或买欧洲 eSIM', note:'落地就能用，方便叫车、查地图' },
+    { id:'prep-baggage', name:'确认 Vueling 内陆段行李额度', note:'廉航常限制随身行李重量/尺寸，可能需要提前加购托运' }
+  ];
+  const prepState = {}; // { id: true/false } —— 只存本机，因人而异，不跟对方同步
+  const PREP_LOCAL_KEY = 'trip-prep-state-v1';
+  function loadPrepLocal(){
+    try{
+      const saved = localStorage.getItem(PREP_LOCAL_KEY);
+      if(saved) Object.assign(prepState, JSON.parse(saved));
+    }catch(err){}
+  }
+  function savePrepLocal(){
+    try{ localStorage.setItem(PREP_LOCAL_KEY, JSON.stringify(prepState)); }catch(err){}
+  }
+  function renderPrep(){
+    const mount = $('prepMount');
+    mount.innerHTML = '';
+    prep.forEach(p => {
+      const done = !!prepState[p.id];
+      const li = document.createElement('li');
+      li.className = 'todo-li' + (done ? ' done' : '');
+      li.innerHTML = `
+        <label class="todo-row">
+          <input type="checkbox" class="todo-check" ${done ? 'checked' : ''}>
+          <span class="todo-text">${p.name}<br><span class="todo-note">${p.note}</span></span>
+        </label>`;
+      li.querySelector('.todo-check').addEventListener('change', (e) => {
+        prepState[p.id] = e.target.checked;
+        savePrepLocal();
+      });
+      mount.appendChild(li);
+    });
+  }
+
   /* ================= 待办状态：Worker + KV 共享同步 ================= */
   const TODO_API = '/api/trip-todo';
   const TODO_LOCAL_KEY = 'trip-todo-state-v2';
@@ -1263,6 +1313,8 @@
   renderBookings();
   renderDays();
   renderTodo();
+  loadPrepLocal();
+  renderPrep();
   renderTips();
   buildMap();
   buildCalendar();
