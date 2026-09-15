@@ -228,6 +228,8 @@
   .btn-ghost:hover{ border-color:var(--owe); color:var(--owe); }
 
   footer{ margin-top:36px; font-size:12px; color:var(--ink-soft); text-align:center; }
+  .link-btn{ background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; font-size:12px; padding:8px 0; }
+  .link-btn:active{ color:var(--owe); }
 </style>
 </head>
 <body>
@@ -296,7 +298,9 @@
     </div>
   </section>
 
-  <footer>点地点名可直接跳转 Google 地图导航 · 日夜配色跟随你的设备时间</footer>
+  <footer>点地点名可直接跳转 Google 地图导航 · 日夜配色跟随你的设备时间<br>
+    <button class="link-btn" id="resetFlexBtn">重置所有灵活活动排序</button>
+  </footer>
 </div>
 
 <script>
@@ -400,6 +404,12 @@
       html += `<div class="booking-item"><div class="b-title">${t.title}</div>
         <div class="b-meta">${t.when}<br>${t.meta}</div></div>`;
     });
+    // 待办清单里勾选确认过的门票，也一起显示在这里，不用手动维护两份
+    todo.filter(t => t.target && t.target.startsWith('ticket-') && todoState[t.target] && todoState[t.target].done)
+      .forEach(t => {
+        html += `<div class="booking-item"><div class="b-title">${t.name}</div>
+          <div class="b-meta">已订：${todoState[t.target].info}</div></div>`;
+      });
     el.innerHTML = html;
   }
 
@@ -592,7 +602,6 @@
   const flexOrder = {};    // { dayId: [id, id, ...] }
   const confirmedFlex = {}; // { dayId: [ {id, t, label}, ... ] } —— 已确认插入固定时间线的灵活活动
   const deletedFlex = new Set(); // 明确删除/已确认过的 id，避免代码更新后又被重新加回来
-  let flexSeq = 0;
 
   function timeSortKey(t){
     if(!t) return 720;
@@ -622,12 +631,21 @@
     });
   }
 
+  function stableIdFor(dayId, label){
+    // 用内容本身算出固定 id，不受其他项目增减顺序影响——
+    // 只要这个项目的文字和所在天没变，id 就不会变
+    const s = dayId + '|' + label;
+    let hash = 0;
+    for(let i=0;i<s.length;i++){ hash = ((hash<<5)-hash + s.charCodeAt(i))|0; }
+    return `flex-${dayId}-${Math.abs(hash)}`;
+  }
+
   function extractFlexItems(){
     days.forEach(d => {
       flexOrder[d.id] = flexOrder[d.id] || [];
       d.items = d.items.filter(it => {
         if(it.est && !it.book){
-          const id = it.id || `flex-${d.id}-${flexSeq++}`;
+          const id = it.id || stableIdFor(d.id, it.label);
           flexRegistry[id] = { label: it.label, t: it.t || '', q: it.q };
           flexOrder[d.id].push(id);
           return false; // 从固定列表里移除，改由灵活区块渲染
@@ -1309,6 +1327,16 @@
       month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false, timeZone: next.iso.includes('+08:00') ? 'Asia/Hong_Kong' : (next.iso.includes('+03:00') ? 'Asia/Qatar' : 'Europe/Madrid')
     });
   }
+
+  async function resetFlexState(){
+    if(!confirm('这会清空所有灵活活动目前的排序、搬动、确认记录，重新按预设顺序显示。门票待办、备注、行前准备都不受影响。确定要重置吗？')) return;
+    const cleared = { todo: todoState, notes: notesState, flexOrder:{}, flexRegistry:{}, confirmedFlex:{}, deletedFlex:[] };
+    const json = JSON.stringify(cleared);
+    try{ localStorage.setItem(TODO_LOCAL_KEY, json); }catch(err){}
+    try{ await fetch(TODO_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body: json }); }catch(err){}
+    location.reload();
+  }
+  $('resetFlexBtn').addEventListener('click', resetFlexState);
 
   renderBookings();
   renderDays();
