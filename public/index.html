@@ -74,8 +74,6 @@
   /* ---------- Map ---------- */
   .map-card{ padding:8px; overflow:hidden; }
   svg#routeMap{ width:100%; height:auto; display:block; }
-  .map-legend{ display:flex; flex-wrap:wrap; gap:8px 14px; padding:12px 8px 2px; margin-top:8px; border-top:1px dashed var(--line); font-size:12px; color:var(--ink-soft); }
-  .map-legend .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
   .city-label{ font-family: var(--font-sans); font-size:11px; fill: var(--ink); }
   .city-en{ font-size:8.5px; fill: var(--ink-soft); }
 
@@ -87,12 +85,12 @@
   .cal-cell{
     aspect-ratio:1; border-radius:6px; border:1px solid var(--line-soft);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    font-size:11px; color:var(--ink); position:relative; gap:2px;
+    font-size:11px; color:var(--ink); position:relative; gap:1px; padding:2px;
   }
   .cal-cell.empty{ border:none; }
   .cal-cell.cal-transit{ background: repeating-linear-gradient(45deg, var(--line-soft), var(--line-soft) 3px, var(--paper-raised) 3px, var(--paper-raised) 6px); }
-  .cal-daynum{ font-family:var(--font-mono); font-size:10.5px; }
-  .cal-city-dot{ width:6px; height:6px; border-radius:50%; }
+  .cal-daynum{ font-family:var(--font-mono); font-size:10px; }
+  .cal-city-label{ font-size:9px; font-weight:700; line-height:1.1; white-space:nowrap; }
 
   /* ---------- Confirmed bookings ---------- */
   .booking-item{ border-left:3px solid var(--line); padding:8px 0 8px 12px; margin-bottom:6px; }
@@ -340,7 +338,7 @@
         dep:'22:50　巴塞罗那 El Prat 机场 T1', arr:'06:15　多哈 Hamad 机场（+1 天，10/8）',
         meta:'飞行 6 小时 25 分 · 中转前往香港' },
       { code:'QR816　卡达航空', route:'多哈 DOH → 香港 HKG', date:'2026-10-08（周四）',
-        dep:'09:00　多哈 Hamad 机场', arr:'21:55　香港国际机场 T1', meta:'飞行 7 小时 55 分' }
+        dep:'10:30　多哈 Hamad 机场', arr:'23:25　香港国际机场 T1', meta:'飞行 7 小时 55 分' }
     ],
     car: [
       { title:'接机：马德里机场 → 酒店', when:'2026-09-22　约 09:30–10:15（航班 09:15 落地后）', meta:'舒适5座 · 可载4人 2件行李' },
@@ -360,16 +358,16 @@
         addr:'R. Serpa Pinto 37, 8000-431 Faro, Portugal', phone:'+351 966 212 308' },
       { id:'hotel-sevilla', city:'塞维利亚', name:'Hotel Sevilla Center（塞维利亚中心酒店）', dates:'10/1 – 10/2（1晚）',
         addr:'Av. de la Buhaira, 24, 41018 Sevilla, Spain', phone:'+34 954 54 95 00' },
-      { id:'hotel-ronda', city:'龙达', name:'Hotel Ronda Moments（伦达时刻酒店）⚠️', dates:'10/2 – 10/3（1晚）',
+      { id:'hotel-ronda', city:'龙达', name:'Hotel Ronda Moments（伦达时刻酒店）', dates:'10/2 – 10/3（1晚）',
         addr:'Partida los Morales, 28, 29400 Ronda, Málaga, Spain', phone:'+34 665 82 78 62',
         warn:'城外独立小屋型民宿，距龙达老城约10–15分钟车程，无前台、需用 WhatsApp 领取门禁密码，建议提前确认入住流程' },
       { id:'hotel-barcelona', city:'巴塞罗那', name:"Charles' Apartments in Barcelona（Airbnb，房东 Carlos）", dates:'10/3 – 10/7（4晚）',
         addr:'Avinguda de la República Argentina, 5, Barcelona, Spain', phone:'（Airbnb 站内联系房东 Carlos）' }
     ],
     tickets: [
-      { title:'阿尔罕布拉宫 Alhambra', when:'2026-10-03　15:30 入场', meta:'纳塞瑞斯皇宫 Nasrid Palaces 时段已确认就是15:30，一入场直接先去；当天仍需赶19:30航班，详见当日行程提醒' },
+      { title:'阿尔罕布拉宫 Alhambra', when:'2026-10-03　15:30 入场（含纳塞瑞斯皇宫）', meta:'当天紧接着赶19:30航班，详见当日行程' },
       { title:'圣家堂 Sagrada Família', when:'2026-10-05　12:45 入场', meta:'含塔楼 Tower 13:30' },
-      { title:"巴特罗之家 Casa Batlló · Be The First（清晨场）", when:'2026-10-06　08:45 入场', meta:'成人2张 · €90.00 · 比一般9:00开放更早，人少，但当天不能睡懒觉' }
+      { title:"巴特罗之家 Casa Batlló · Be The First（清晨场）", when:'2026-10-06　08:45 入场', meta:'成人2张 · €90.00 · 比一般9:00开放更早，人少' }
     ]
   };
 
@@ -511,18 +509,18 @@
         {t:'', est:true, label:`${placeLink('斗牛广场 (Plaza de Toros)',{q:'Plaza de Toros Ronda'})}`},
         {t:'傍晚', est:true, label:`${placeLink('龙达新桥 (Puente Nuevo)',{q:'Puente Nuevo Ronda'})} / 峡谷 (El Tajo Gorge)`}
       ],
-      overnightId:'hotel-ronda', overnight:'Hotel Ronda Moments ⚠️见上方入住提醒',
+      overnightId:'hotel-ronda', overnight:'Hotel Ronda Moments',
       stops:[{q:'Seville Cathedral'},{q:'Metropol Parasol Sevilla'},{q:'Plaza de Toros Ronda'},{q:'Puente Nuevo Ronda'}] },
 
     { id:'d12', date:'2026-10-03', wd:'周六', city:'龙达 → 格拉纳达 → 巴塞罗那', color:CITY_COLOR.barcelona,
-      warn:'纳塞瑞斯皇宫 (Nasrid Palaces) 时段已确认就是15:30，一入场可直接先进纳塞瑞斯皇宫，风险比原本预期的低，但离场后仍要赶19:30航班，建议按下方节奏走，别临时加行程',
+      warn:'纳塞瑞斯皇宫 (Nasrid Palaces) 时段确认就是15:30，一入场可直接先进去；离场后仍要赶19:30航班，建议按下方节奏走，别临时加行程',
       items:[
         {t:'08:30', est:true, label:'退房，包车离开龙达（车程约2小时）'},
         {t:'约11:00', est:true, label:'抵达格拉纳达，行李留车上'},
         {t:'11:00-12:30', est:true, label:`${placeLink('阿尔拜辛区 (Albaicín)',{q:'Albaicín Granada'})} / ${placeLink('圣尼古拉斯观景台',{q:'Mirador San Nicolás Granada'})}`},
         {t:'12:30-13:30', est:true, label:'午餐'},
         {t:'13:30-15:15', est:true, label:'自由活动 / 提前到阿尔罕布拉宫周边'},
-        {t:'15:30', label:`${placeLink('阿尔罕布拉宫 (Alhambra)',{q:'Alhambra Granada'})} 入场（已订）· 纳塞瑞斯皇宫时段确认就是15:30，一进场先去这里`},
+        {t:'15:30', label:`${placeLink('阿尔罕布拉宫 (Alhambra)',{q:'Alhambra Granada'})} 入场（已订）· 优先进纳塞瑞斯皇宫`},
         {t:'最晚17:45', est:true, label:'务必离场，包车在出口（Puerta de la Justicia 附近）等，一下场就上车'},
         {t:'约18:15-18:30', est:true, label:'抵达格拉纳达机场'},
         {t:'19:30', label:'VY2015 格拉纳达 → 巴塞罗那 起飞'},
@@ -569,8 +567,8 @@
     { id:'d17', date:'2026-10-08', wd:'周四', city:'多哈 → 香港', color:CITY_COLOR.barcelona,
       items:[
         {t:'06:15', label:'抵达多哈 Hamad 机场'},
-        {t:'09:00', label:'QR816 多哈 → 香港 起飞'},
-        {t:'21:55', label:'抵达香港，行程结束'}
+        {t:'10:30', label:'QR816 多哈 → 香港 起飞'},
+        {t:'23:25', label:'抵达香港，行程结束'}
       ],
       overnight:'—',
       stops:[] }
@@ -1011,6 +1009,10 @@
     '2026-10-03':'barcelona', '2026-10-04':'barcelona', '2026-10-05':'barcelona', '2026-10-06':'barcelona',
     '2026-10-07':'transit'
   };
+  const CITY_SHORT = {
+    madrid:'马德', salamanca:'萨拉', porto:'波尔', lisbon:'里斯',
+    faro:'法鲁', sevilla:'塞维', ronda:'龙达', barcelona:'巴塞'
+  };
   function buildCalendar(){
     const weekLabels = ['日','一','二','三','四','五','六'];
     const start = new Date(2026, 8, 20); // 9/20（周日）
@@ -1024,20 +1026,15 @@
       const night = nightsMap[dateStr];
       const dayLabel = day === 1 ? `${m}/${day}` : day; // 每月1号标出月份避免歧义
       if(night === 'transit'){
-        html += `<div class="cal-cell cal-transit"><span class="cal-daynum">${dayLabel}</span>✈️</div>`;
+        html += `<div class="cal-cell cal-transit"><span class="cal-daynum">${dayLabel}</span><span class="cal-city-label">转机</span></div>`;
       } else if(night){
         html += `<div class="cal-cell" style="background:color-mix(in srgb, ${CITY_COLOR[night]} 22%, var(--paper-raised)); border-color:${CITY_COLOR[night]}">
-          <span class="cal-daynum">${dayLabel}</span><span class="cal-city-dot" style="background:${CITY_COLOR[night]}"></span></div>`;
+          <span class="cal-daynum">${dayLabel}</span><span class="cal-city-label" style="color:${CITY_COLOR[night]}">${CITY_SHORT[night]}</span></div>`;
       } else {
         html += `<div class="cal-cell"><span class="cal-daynum">${dayLabel}</span></div>`;
       }
     }
     html += `</div>`;
-    const legendCities = ['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'];
-    const legendNames = ['马德里','萨拉曼卡','波尔图','里斯本','法鲁','塞维利亚','龙达','巴塞罗那'];
-    html += `<div class="map-legend">${legendCities.map((k,i) =>
-      `<span><span class="dot" style="background:var(--c${i})"></span>${legendNames[i]}</span>`
-    ).join('')}</div>`;
     $('calMount').innerHTML = html;
   }
 
@@ -1130,8 +1127,8 @@
     { label:'圣家堂 (Sagrada Família) 入场', iso:'2026-10-05T12:45:00+02:00' },
     { label:'包车送机（巴塞罗那）', iso:'2026-10-07T19:50:00+02:00' },
     { label:'QR142 巴塞罗那 → 多哈 起飞', iso:'2026-10-07T22:50:00+02:00' },
-    { label:'QR816 多哈 → 香港 起飞', iso:'2026-10-08T09:00:00+03:00' },
-    { label:'QR816 抵达香港', iso:'2026-10-08T21:55:00+08:00' }
+    { label:'QR816 多哈 → 香港 起飞', iso:'2026-10-08T10:30:00+03:00' },
+    { label:'QR816 抵达香港', iso:'2026-10-08T23:25:00+08:00' }
   ];
 
   function updateCountdown(){
