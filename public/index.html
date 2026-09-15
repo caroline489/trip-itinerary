@@ -8,11 +8,7 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<<<<<<< HEAD
 <meta name="apple-mobile-web-app-title" content="Spain & Portugal">
-=======
-<meta name="apple-mobile-web-app-title" content="行程">
->>>>>>> e49a0cf271628784af2b86db9c1099dba8b5d75d
 <title>Spain & Portugal · 2026</title>
 <style>
   :root{
@@ -418,7 +414,7 @@
         {t:'上午', est:true, label:`${placeLink('马德里王宫 (Royal Palace of Madrid)',{q:'Palacio Real de Madrid'})}`, book:true, id:'ticket-madrid-palace'},
         {t:'', est:true, label:`${placeLink('太阳门广场 (Puerta del Sol)',{q:'Puerta del Sol Madrid'})}`},
         {t:'下午', est:true, label:`${placeLink('丽池公园 (Parque del Retiro)',{q:'Parque del Retiro Madrid'})}`},
-        {t:'', est:true, label:`德波神庙 (Templo de Debod)、圣米盖尔市场 (Mercado de San Miguel)`}
+        {t:'', est:true, label:`${placeLink('德波神庙 (Templo de Debod)',{q:'Templo de Debod Madrid'})}、${placeLink('圣米盖尔市场 (Mercado de San Miguel)',{q:'Mercado de San Miguel Madrid'})}`}
       ],
       overnightId:'hotel-madrid', overnight:'Ocean Drive Madrid（连住）',
       stops:[{q:'Palacio Real de Madrid'},{q:'Puerta del Sol Madrid'},{q:'Parque del Retiro Madrid'},{q:'Mercado de San Miguel Madrid'}] },
@@ -584,9 +580,10 @@
   /* ================= 灵活活动：可调整顺序 / 移到别天 / 新增 / 删除 =================
      只有「预估时段、不需要订票」的项目才会变成可调整的卡片；机票、已订门票、
      固定时间的项目维持原样、不能动，避免跟实际订票状态脱节。 */
-  const flexRegistry = {}; // { id: { label, t } }
+  const flexRegistry = {}; // { id: { label, t, q } }
   const flexOrder = {};    // { dayId: [id, id, ...] }
   const confirmedFlex = {}; // { dayId: [ {id, t, label}, ... ] } —— 已确认插入固定时间线的灵活活动
+  const deletedFlex = new Set(); // 明确删除/已确认过的 id，避免代码更新后又被重新加回来
   let flexSeq = 0;
 
   function timeSortKey(t){
@@ -623,13 +620,59 @@
       d.items = d.items.filter(it => {
         if(it.est && !it.book){
           const id = it.id || `flex-${d.id}-${flexSeq++}`;
-          flexRegistry[id] = { label: it.label, t: it.t || '' };
+          flexRegistry[id] = { label: it.label, t: it.t || '', q: it.q };
           flexOrder[d.id].push(id);
           return false; // 从固定列表里移除，改由灵活区块渲染
         }
         return true;
       });
     });
+  }
+
+  /* 把云端存的灵活活动状态「合并」进目前的默认状态，而不是整个覆盖掉——
+     这样以后我在代码里新增/调整灵活活动时，不会被旧的存档打回原形。
+     规则：已经存在云端的项目，位置/时间以云端为准（保留用户的调整）；
+     代码里新增的、云端还没见过的项目，用代码给的默认位置；
+     被删除过或已确认插入时间线的项目，不会再被复活。 */
+  function mergeFlexOverlay(savedOrder, savedRegistry, savedDeleted){
+    (savedDeleted || []).forEach(id => deletedFlex.add(id));
+
+    const freshOrderSnapshot = JSON.parse(JSON.stringify(flexOrder));
+    const freshRegistrySnapshot = JSON.parse(JSON.stringify(flexRegistry));
+    const savedIds = new Set(Object.keys(savedRegistry || {}));
+
+    const mergedRegistry = {};
+    const mergedOrder = {};
+    days.forEach(d => { mergedOrder[d.id] = []; });
+
+    Object.entries(savedOrder || {}).forEach(([dayId, ids]) => {
+      mergedOrder[dayId] = mergedOrder[dayId] || [];
+      ids.forEach(id => {
+        if(!savedRegistry[id]) return;
+        const fresh = freshRegistrySnapshot[id];
+        mergedRegistry[id] = {
+          label: fresh ? fresh.label : savedRegistry[id].label,
+          t: savedRegistry[id].t,
+          q: (fresh && fresh.q) || savedRegistry[id].q
+        };
+        mergedOrder[dayId].push(id);
+      });
+    });
+
+    Object.entries(freshOrderSnapshot).forEach(([dayId, ids]) => {
+      ids.forEach(id => {
+        if(!savedIds.has(id) && !deletedFlex.has(id)){
+          mergedRegistry[id] = freshRegistrySnapshot[id];
+          mergedOrder[dayId] = mergedOrder[dayId] || [];
+          mergedOrder[dayId].push(id);
+        }
+      });
+    });
+
+    Object.keys(flexOrder).forEach(k => delete flexOrder[k]);
+    Object.assign(flexOrder, mergedOrder);
+    Object.keys(flexRegistry).forEach(k => delete flexRegistry[k]);
+    Object.assign(flexRegistry, mergedRegistry);
   }
 
   function dayLabel(dayId){
@@ -687,7 +730,7 @@
         const i = arr.indexOf(id);
         if(act === 'up' && i > 0){ [arr[i-1],arr[i]] = [arr[i],arr[i-1]]; }
         if(act === 'down' && i < arr.length-1){ [arr[i+1],arr[i]] = [arr[i],arr[i+1]]; }
-        if(act === 'del'){ arr.splice(i,1); delete flexRegistry[id]; }
+        if(act === 'del'){ arr.splice(i,1); delete flexRegistry[id]; deletedFlex.add(id); }
         if(act === 'confirm'){
           const item = flexRegistry[id];
           if(item){
@@ -695,7 +738,7 @@
               alert('确认插入时间线前，麻烦先填一个具体时间（比如 09:00），这样才能排到正确的位置。');
               return;
             }
-            arr.splice(i,1); delete flexRegistry[id];
+            arr.splice(i,1); delete flexRegistry[id]; deletedFlex.add(id);
             const day = days.find(x => x.id === dayId);
             day.items.push({ t:item.t, label:item.label, est:true, id });
             day.items.sort((a,b) => timeSortKey(a.t) - timeSortKey(b.t));
@@ -1002,11 +1045,7 @@
     Object.assign(todoState, todoPart);
     Object.assign(notesState, notesPart);
     if(payload.flexOrder && payload.flexRegistry){
-      // 用存下来的版本整个取代默认值——这是「目前真正的状态」
-      Object.keys(flexOrder).forEach(k => delete flexOrder[k]);
-      Object.assign(flexOrder, payload.flexOrder);
-      Object.keys(flexRegistry).forEach(k => delete flexRegistry[k]);
-      Object.assign(flexRegistry, payload.flexRegistry);
+      mergeFlexOverlay(payload.flexOrder, payload.flexRegistry, payload.deletedFlex);
     }
     if(payload.confirmedFlex){
       Object.keys(confirmedFlex).forEach(k => delete confirmedFlex[k]);
@@ -1041,7 +1080,7 @@
   function queueSaveTodo(){
     clearTimeout(todoSaveTimer);
     todoSaveTimer = setTimeout(async () => {
-      const json = JSON.stringify({ todo: todoState, notes: notesState, flexOrder, flexRegistry, confirmedFlex });
+      const json = JSON.stringify({ todo: todoState, notes: notesState, flexOrder, flexRegistry, confirmedFlex, deletedFlex:[...deletedFlex] });
       try{ localStorage.setItem(TODO_LOCAL_KEY, json); }catch(err){}
       try{
         await fetch(TODO_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body: json });
