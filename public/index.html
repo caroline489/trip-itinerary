@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <meta name="theme-color" content="#F7F2E7">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="行程">
 <title>西葡行程 · 2026</title>
 <style>
   :root{
@@ -69,7 +74,7 @@
   /* ---------- Map ---------- */
   .map-card{ padding:8px; overflow:hidden; }
   svg#routeMap{ width:100%; height:auto; display:block; }
-  .map-legend{ display:flex; flex-wrap:wrap; gap:8px 14px; padding:10px 8px 2px; font-size:12px; color:var(--ink-soft); }
+  .map-legend{ display:flex; flex-wrap:wrap; gap:8px 14px; padding:12px 8px 2px; margin-top:8px; border-top:1px dashed var(--line); font-size:12px; color:var(--ink-soft); }
   .map-legend .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
   .city-label{ font-family: var(--font-sans); font-size:11px; fill: var(--ink); }
   .city-en{ font-size:8.5px; fill: var(--ink-soft); }
@@ -142,6 +147,9 @@
   .todo-note-input{ margin-left:29px; width:calc(100% - 29px); margin-bottom:8px; }
   .est-note{ font-size:11px; color:var(--ink-soft); margin-top:6px; }
   .overnight-note{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); }
+  .hotel-detail{ margin-top:4px; font-size:12px; }
+  .hotel-detail a{ text-decoration:none; border-bottom:1px dotted var(--ink-soft); }
+  .hotel-jump-note{ font-size:12.5px; color:var(--ink-soft); font-style:italic; margin-bottom:4px; }
 
   /* ---------- 灵活活动（可调整顺序/移到别天） ---------- */
   .flex-section{ margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); }
@@ -150,12 +158,16 @@
   .flex-empty{ font-size:12.5px; color:var(--ink-soft); font-style:italic; margin-bottom:8px; }
   .flex-card{
     background: var(--paper-raised); border:1px solid var(--line-soft); border-radius:8px;
-    padding:8px 10px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;
-    gap:8px; flex-wrap:wrap;
+    padding:8px 10px; margin-bottom:8px;
   }
-  .flex-card-main{ font-size:13.5px; flex:1 1 140px; min-width:0; }
-  .flex-time{ font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-right:6px; }
-  .flex-card-controls{ display:flex; align-items:center; gap:4px; flex:0 0 auto; }
+  .flex-card-main{ font-size:13.5px; display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  .flex-time-input{
+    font-family:var(--font-mono); font-size:12px; color:var(--ink-soft);
+    border:1px dashed var(--line); border-radius:5px; background:var(--paper);
+    padding:2px 6px; width:64px; flex:0 0 auto;
+  }
+  .flex-time-input:focus{ border-style:solid; border-color:var(--gold); color:var(--ink); outline:none; }
+  .flex-card-controls{ display:flex; align-items:center; gap:4px; justify-content:flex-end; }
   .flex-btn{
     border:1px solid var(--line); background:var(--paper); color:var(--ink-soft); cursor:pointer;
     width:26px; height:26px; border-radius:6px; font-size:11px; line-height:1;
@@ -244,7 +256,6 @@
     <h2>行程总览 <span class="en">Route overview</span></h2>
     <div class="card map-card">
       <div id="mapMount"></div>
-      <div class="map-legend" id="mapLegend"></div>
       <div class="cal-wrap" id="calMount"></div>
     </div>
   </section>
@@ -337,22 +348,22 @@
       { title:'全天包车 + 送机：巴塞罗那 → 机场', when:'2026-10-07　全天使用，傍晚送机（航班 22:50 起飞，建议 19:50 前到机场）', meta:'联系电话：待补充 ⚠️' }
     ],
     hotels: [
-      { city:'马德里', name:'Ocean Drive Madrid（海洋大道酒店）', dates:'9/22 – 9/25（3晚）',
+      { id:'hotel-madrid', city:'马德里', name:'Ocean Drive Madrid（海洋大道酒店）', dates:'9/22 – 9/25（3晚）',
         addr:'Pl. de Isabel II, 7, Centro, 28013 Madrid, Spain', phone:'+34 910 88 28 04' },
-      { city:'萨拉曼卡', name:'NH Collection Salamanca Palacio de Castellanos（卡斯泰拉诺斯宫 NH 典藏酒店）', dates:'9/25 – 9/26（1晚）',
+      { id:'hotel-salamanca', city:'萨拉曼卡', name:'NH Collection Salamanca Palacio de Castellanos（卡斯泰拉诺斯宫 NH 典藏酒店）', dates:'9/25 – 9/26（1晚）',
         addr:'C. San Pablo, 58-64, 37008 Salamanca, Spain', phone:'+34 916 00 81 46' },
-      { city:'波尔图', name:'Porto Royal Bridges（皇家桥梁酒店）', dates:'9/26 – 9/28（2晚）',
+      { id:'hotel-porto', city:'波尔图', name:'Porto Royal Bridges（皇家桥梁酒店）', dates:'9/26 – 9/28（2晚）',
         addr:'R. de Sá da Bandeira 53, 4000-433 Porto, Portugal', phone:'+351 22 243 6221' },
-      { city:'里斯本', name:'Omid Saldanha Hotel（奥米德萨尔达尼亚酒店）', dates:'9/28 – 9/30（2晚）',
+      { id:'hotel-lisbon', city:'里斯本', name:'Omid Saldanha Hotel（奥米德萨尔达尼亚酒店）', dates:'9/28 – 9/30（2晚）',
         addr:'R. Filipe Folque 49, 1050-111 Lisboa, Portugal', phone:'+351 21 053 6850' },
-      { city:'法鲁', name:'Luxury Guest House Opus One（作品一号奢华旅馆）', dates:'9/30 – 10/1（1晚）',
+      { id:'hotel-faro', city:'法鲁', name:'Luxury Guest House Opus One（作品一号奢华旅馆）', dates:'9/30 – 10/1（1晚）',
         addr:'R. Serpa Pinto 37, 8000-431 Faro, Portugal', phone:'+351 966 212 308' },
-      { city:'塞维利亚', name:'Hotel Sevilla Center（塞维利亚中心酒店）', dates:'10/1 – 10/2（1晚）',
+      { id:'hotel-sevilla', city:'塞维利亚', name:'Hotel Sevilla Center（塞维利亚中心酒店）', dates:'10/1 – 10/2（1晚）',
         addr:'Av. de la Buhaira, 24, 41018 Sevilla, Spain', phone:'+34 954 54 95 00' },
-      { city:'龙达', name:'Hotel Ronda Moments（伦达时刻酒店）⚠️', dates:'10/2 – 10/3（1晚）',
+      { id:'hotel-ronda', city:'龙达', name:'Hotel Ronda Moments（伦达时刻酒店）⚠️', dates:'10/2 – 10/3（1晚）',
         addr:'Partida los Morales, 28, 29400 Ronda, Málaga, Spain', phone:'+34 665 82 78 62',
         warn:'城外独立小屋型民宿，距龙达老城约10–15分钟车程，无前台、需用 WhatsApp 领取门禁密码，建议提前确认入住流程' },
-      { city:'巴塞罗那', name:"Charles' Apartments in Barcelona（Airbnb，房东 Carlos）", dates:'10/3 – 10/7（4晚）',
+      { id:'hotel-barcelona', city:'巴塞罗那', name:"Charles' Apartments in Barcelona（Airbnb，房东 Carlos）", dates:'10/3 – 10/7（4晚）',
         addr:'Avinguda de la República Argentina, 5, Barcelona, Spain', phone:'（Airbnb 站内联系房东 Carlos）' }
     ],
     tickets: [
@@ -374,12 +385,8 @@
       html += `<div class="booking-item car"><div class="b-title">${c.title}</div>
         <div class="b-meta">${c.when}<br>${c.meta}</div></div>`;
     });
-    html += '<div class="subhead">酒店 Hotels</div>';
-    bookings.hotels.forEach(h => {
-      const link = placeLink(h.addr, {q:h.addr});
-      html += `<div class="booking-item"><div class="b-title">${h.city} · ${h.name}</div>
-        <div class="b-meta">${h.dates}<br>📍 ${link}<br>📞 ${h.phone}${h.warn ? `<br><span style="color:var(--owe)">⚠️ ${h.warn}</span>` : ''}</div></div>`;
-    });
+    html += '<div class="subhead">酒店 Hotels <span class="en">详见对应日期</span></div>';
+    html += '<div class="hotel-jump-note">每晚住宿的地址、电话已经放进「逐日行程」对应那天里，不在这里重复列了。</div>';
     html += '<div class="subhead">门票 Tickets</div>';
     bookings.tickets.forEach(t => {
       html += `<div class="booking-item"><div class="b-title">${t.title}</div>
@@ -400,7 +407,7 @@
         {t:'午后', est:true, label:`轻松适应：${placeLink('圣米盖尔市场 (Mercado de San Miguel)',{q:'Mercado de San Miguel Madrid'})} 简单吃点东西，${placeLink('马德里主广场 (Plaza Mayor)',{q:'Plaza Mayor Madrid'})} 短暂散步`},
         {t:'傍晚', est:true, label:'尽量早点回酒店休息补眠，为第二天正式观光留体力'}
       ],
-      overnight:'Ocean Drive Madrid', stops:[{q:'Adolfo Suárez Madrid–Barajas Airport'},{q:'Ocean Drive Madrid, Plaza de Isabel II 7'},{q:'Mercado de San Miguel Madrid'},{q:'Plaza Mayor Madrid'}] },
+      overnightId:'hotel-madrid', overnight:'Ocean Drive Madrid', stops:[{q:'Adolfo Suárez Madrid–Barajas Airport'},{q:'Ocean Drive Madrid, Plaza de Isabel II 7'},{q:'Mercado de San Miguel Madrid'},{q:'Plaza Mayor Madrid'}] },
 
     { id:'d2', date:'2026-09-23', wd:'周三', city:'马德里 Madrid', color:CITY_COLOR.madrid,
       items:[
@@ -409,7 +416,7 @@
         {t:'下午', est:true, label:`${placeLink('丽池公园 (Parque del Retiro)',{q:'Parque del Retiro Madrid'})}`},
         {t:'', est:true, label:`德波神庙 (Templo de Debod)、圣米盖尔市场 (Mercado de San Miguel)`}
       ],
-      overnight:'Ocean Drive Madrid（连住）',
+      overnightId:'hotel-madrid', overnight:'Ocean Drive Madrid（连住）',
       stops:[{q:'Palacio Real de Madrid'},{q:'Puerta del Sol Madrid'},{q:'Parque del Retiro Madrid'},{q:'Mercado de San Miguel Madrid'}] },
 
     { id:'d3', date:'2026-09-24', wd:'周四', city:'托莱多 Toledo（马德里出发一日游）', color:CITY_COLOR.madrid,
@@ -419,7 +426,7 @@
         {t:'', est:true, label:`${placeLink('托莱多城堡 (Alcázar de Toledo)',{q:'Alcázar de Toledo'})}`, book:true, id:'ticket-toledo-alcazar'},
         {t:'傍晚', est:true, label:`${placeLink('山谷瞭望台 (Mirador del Valle)',{q:'Mirador del Valle Toledo'})}`}
       ],
-      overnight:'Ocean Drive Madrid（连住）',
+      overnightId:'hotel-madrid', overnight:'Ocean Drive Madrid（连住）',
       stops:[{q:'Toledo Spain'},{q:'Catedral de Toledo'},{q:'Alcázar de Toledo'},{q:'Mirador del Valle Toledo'}] },
 
     { id:'d4', date:'2026-09-25', wd:'周五', city:'塞哥维亚 → 萨拉曼卡', color:CITY_COLOR.salamanca,
@@ -431,7 +438,7 @@
         {t:'下午', est:true, label:`前往萨拉曼卡，${placeLink('萨拉曼卡大学 (University of Salamanca)',{q:'University of Salamanca'})}`, book:true, id:'ticket-salamanca-university'},
         {t:'', est:true, label:`${placeLink('罗马桥 (Roman Bridge)',{q:'Puente Romano Salamanca'})}`}
       ],
-      overnight:'NH Collection Salamanca Palacio de Castellanos',
+      overnightId:'hotel-salamanca', overnight:'NH Collection Salamanca Palacio de Castellanos',
       stops:[{q:'Catedral de Segovia'},{q:'Alcázar of Segovia'},{q:'Aqueduct of Segovia'},{q:'University of Salamanca'},{q:'Puente Romano Salamanca'}] },
 
     { id:'d5', date:'2026-09-26', wd:'周六', city:'萨拉曼卡 → 波尔图', color:CITY_COLOR.porto,
@@ -442,7 +449,7 @@
         {t:'傍晚', est:true, label:`${placeLink('路易一世大桥 (Dom Luís I Bridge)',{q:'Dom Luís I Bridge Porto'})}`},
         {t:'', est:true, label:`${placeLink('杜罗河落日观景台',{q:'Douro river viewpoint Porto'})}`}
       ],
-      overnight:'Porto Royal Bridges',
+      overnightId:'hotel-porto', overnight:'Porto Royal Bridges',
       stops:[{q:'Torre de la Clerecía Salamanca'},{q:'Dom Luís I Bridge Porto'}] },
 
     { id:'d6', date:'2026-09-27', wd:'周日', city:'波尔图 Porto', color:CITY_COLOR.porto,
@@ -452,7 +459,7 @@
         {t:'下午', est:true, label:`${placeLink('雷贝拉广场 (Praça da Ribeira)',{q:'Praça da Ribeira Porto'})} 老城漫步`},
         {t:'傍晚', est:true, label:`${placeLink('桑德曼酒窖品酒 (Sandeman Cellars)',{q:'Sandeman Cellars Porto'})}〔待订〕`, id:'ticket-sandeman'}
       ],
-      overnight:'Porto Royal Bridges（连住）',
+      overnightId:'hotel-porto', overnight:'Porto Royal Bridges（连住）',
       stops:[{q:'Livraria Lello Porto'},{q:'Palácio da Bolsa Porto'},{q:'Praça da Ribeira Porto'},{q:'Sandeman Cellars Porto'}] },
 
     { id:'d7', date:'2026-09-28', wd:'周一', city:'波尔图 → 辛特拉 → 里斯本', color:CITY_COLOR.lisbon,
@@ -462,7 +469,7 @@
         {t:'', est:true, label:`${placeLink('辛特拉小镇 (Sintra)',{q:'Sintra Portugal'})}`},
         {t:'', est:true, label:`${placeLink('罗卡角 (Cabo da Roca)',{q:'Cabo da Roca'})}`}
       ],
-      overnight:'Omid Saldanha Hotel',
+      overnightId:'hotel-lisbon', overnight:'Omid Saldanha Hotel',
       stops:[{q:'Pena Palace Sintra'},{q:'Sintra Portugal'},{q:'Cabo da Roca'},{q:'Omid Saldanha Hotel Lisbon'}] },
 
     { id:'d8', date:'2026-09-29', wd:'周二', city:'里斯本 Lisbon', color:CITY_COLOR.lisbon,
@@ -472,7 +479,7 @@
         {t:'', est:true, label:`${placeLink('发现者纪念碑 (Padrão dos Descobrimentos)',{q:'Padrão dos Descobrimentos'})}`},
         {t:'下午', est:true, label:`${placeLink('自由大道 (Avenida da Liberdade)',{q:'Avenida da Liberdade Lisbon'})}`}
       ],
-      overnight:'Omid Saldanha Hotel（连住）',
+      overnightId:'hotel-lisbon', overnight:'Omid Saldanha Hotel（连住）',
       stops:[{q:'Jerónimos Monastery Lisbon'},{q:'Belém Tower Lisbon'},{q:'Padrão dos Descobrimentos'},{q:'Avenida da Liberdade Lisbon'}] },
 
     { id:'d9', date:'2026-09-30', wd:'周三', city:'里斯本 → 法鲁', color:CITY_COLOR.faro,
@@ -481,7 +488,7 @@
         {t:'', est:true, label:`${placeLink('阿尔法玛区 (Alfama)',{q:'Alfama Lisbon'})} / 圣胡斯塔升降机 (Santa Justa Lift)`},
         {t:'午后', est:true, label:'包车南下法鲁（约300公里）'}
       ],
-      overnight:'Luxury Guest House Opus One',
+      overnightId:'hotel-faro', overnight:'Luxury Guest House Opus One',
       stops:[{q:'São Jorge Castle Lisbon'},{q:'Santa Justa Lift Lisbon'},{q:'Luxury Guest House Opus One Faro'}] },
 
     { id:'d10', date:'2026-10-01', wd:'周四', city:'法鲁 → 塞维利亚', color:CITY_COLOR.sevilla,
@@ -493,7 +500,7 @@
         {t:'', est:true, label:`${placeLink('西班牙广场 (Plaza de España)',{q:'Plaza de España Sevilla'})}`},
         {t:'晚上', est:true, label:'弗拉门戈表演 (Flamenco show)〔待订〕', id:'ticket-flamenco'}
       ],
-      overnight:'Hotel Sevilla Center',
+      overnightId:'hotel-sevilla', overnight:'Hotel Sevilla Center',
       stops:[{q:'Real Alcázar de Sevilla'},{q:'Barrio Santa Cruz Sevilla'},{q:'Plaza de España Sevilla'}] },
 
     { id:'d11', date:'2026-10-02', wd:'周五', city:'塞维利亚 → 龙达', color:CITY_COLOR.ronda,
@@ -504,7 +511,7 @@
         {t:'', est:true, label:`${placeLink('斗牛广场 (Plaza de Toros)',{q:'Plaza de Toros Ronda'})}`},
         {t:'傍晚', est:true, label:`${placeLink('龙达新桥 (Puente Nuevo)',{q:'Puente Nuevo Ronda'})} / 峡谷 (El Tajo Gorge)`}
       ],
-      overnight:'Hotel Ronda Moments ⚠️见上方入住提醒',
+      overnightId:'hotel-ronda', overnight:'Hotel Ronda Moments ⚠️见上方入住提醒',
       stops:[{q:'Seville Cathedral'},{q:'Metropol Parasol Sevilla'},{q:'Plaza de Toros Ronda'},{q:'Puente Nuevo Ronda'}] },
 
     { id:'d12', date:'2026-10-03', wd:'周六', city:'龙达 → 格拉纳达 → 巴塞罗那', color:CITY_COLOR.barcelona,
@@ -521,7 +528,7 @@
         {t:'19:30', label:'VY2015 格拉纳达 → 巴塞罗那 起飞'},
         {t:'21:00', label:'抵达巴塞罗那，入住 Airbnb'}
       ],
-      overnight:"Charles' Apartments in Barcelona（Airbnb, Carlos）",
+      overnightId:'hotel-barcelona', overnight:"Charles' Apartments in Barcelona（Airbnb, Carlos）",
       stops:[{q:'Albaicín Granada'},{q:'Alhambra Granada'},{q:'Granada Airport'}] },
 
     { id:'d13', date:'2026-10-04', wd:'周日', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
@@ -529,7 +536,7 @@
         {t:'上午', est:true, label:`${placeLink('蒂比达博 (Tibidabo)',{q:'Tibidabo Barcelona'})}`},
         {t:'下午', est:true, label:`${placeLink('奎尔公园 (Park Güell)',{q:'Park Güell'})}`, book:true, id:'ticket-park-guell'}
       ],
-      overnight:"Charles' Apartments（连住）",
+      overnightId:'hotel-barcelona', overnight:"Charles' Apartments（连住）",
       stops:[{q:'Tibidabo Barcelona'},{q:'Park Güell'}] },
 
     { id:'d14', date:'2026-10-05', wd:'周一', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
@@ -537,7 +544,7 @@
         {t:'12:45', label:`${placeLink('圣家堂 (Sagrada Família)',{q:'Sagrada Família'})} 入场（已订）`},
         {t:'13:30', label:'圣家堂塔楼 Tower 登塔（已订）'}
       ],
-      overnight:"Charles' Apartments（连住）",
+      overnightId:'hotel-barcelona', overnight:"Charles' Apartments（连住）",
       stops:[{q:'Sagrada Família'}] },
 
     { id:'d15', date:'2026-10-06', wd:'周二', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
@@ -547,7 +554,7 @@
         {t:'下午', est:true, label:`${placeLink('哥特区 (Gothic Quarter)',{q:'Barri Gòtic Barcelona'})} / 兰布拉大道 (La Rambla)`},
         {t:'', est:true, label:`加泰罗尼亚国家艺术博物馆 (MNAC)〔待订〕`, id:'ticket-mnac'}
       ],
-      overnight:"Charles' Apartments（连住）",
+      overnightId:'hotel-barcelona', overnight:"Charles' Apartments（连住）",
       stops:[{q:'Casa Batlló'},{q:'Casa Milà'},{q:'Barri Gòtic Barcelona'}] },
 
     { id:'d16', date:'2026-10-07', wd:'周三', city:'巴塞罗那 → 回程', color:CITY_COLOR.barcelona,
@@ -609,7 +616,7 @@
         html += `
           <div class="flex-card" data-flex-id="${id}">
             <div class="flex-card-main">
-              ${item.t ? `<span class="flex-time">${item.t}</span>` : ''}
+              <input type="text" class="flex-time-input" data-flex-time-id="${id}" value="${escapeAttr(item.t)}" placeholder="时间">
               <span class="flex-label">${item.label}</span>
             </div>
             <div class="flex-card-controls">
@@ -626,6 +633,16 @@
   }
 
   function wireFlexSection(card, dayId){
+    card.querySelectorAll('.flex-time-input').forEach(inp => {
+      let t = null;
+      inp.addEventListener('input', () => {
+        const id = inp.dataset.flexTimeId;
+        clearTimeout(t);
+        t = setTimeout(() => {
+          if(flexRegistry[id]){ flexRegistry[id].t = inp.value.trim(); queueSaveTodo(); }
+        }, 400);
+      });
+    });
     card.querySelectorAll('.flex-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.closest('.flex-card').dataset.flexId;
@@ -706,7 +723,18 @@
         </div></div>`;
     });
     body += buildFlexSectionHtml(d.id);
-    if(d.overnight && d.overnight !== '—') body += `<div class="overnight-note">🛏 当晚入住：${d.overnight}</div>`;
+    if(d.overnightId){
+      const hotel = bookings.hotels.find(h => h.id === d.overnightId);
+      if(hotel){
+        body += `<div class="overnight-note">
+          <div>🛏 当晚入住：<strong>${hotel.name}</strong>${d.overnight.includes('连住') ? '（连住）' : ''}</div>
+          <div class="hotel-detail">📍 ${placeLink(hotel.addr, {q:hotel.addr})} ・ 📞 ${hotel.phone}</div>
+          ${hotel.warn ? `<div class="hotel-detail" style="color:var(--owe);">⚠️ ${hotel.warn}</div>` : ''}
+        </div>`;
+      }
+    } else if(d.overnight && d.overnight !== '—'){
+      body += `<div class="overnight-note">🛏 ${d.overnight}</div>`;
+    }
     const hasEst = d.items.some(it => it.est);
     if(hasEst) body += `<div class="est-note">* 为预估时段，具体以当天实际安排为准</div>`;
     return body;
@@ -1005,6 +1033,11 @@
       }
     }
     html += `</div>`;
+    const legendCities = ['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'];
+    const legendNames = ['马德里','萨拉曼卡','波尔图','里斯本','法鲁','塞维利亚','龙达','巴塞罗那'];
+    html += `<div class="map-legend">${legendCities.map((k,i) =>
+      `<span><span class="dot" style="background:var(--c${i})"></span>${legendNames[i]}</span>`
+    ).join('')}</div>`;
     $('calMount').innerHTML = html;
   }
 
@@ -1086,12 +1119,6 @@
         ${markers}
       </svg>`;
     $('mapMount').innerHTML = svg;
-
-    const legendCities = ['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'];
-    const legendNames = ['马德里','萨拉曼卡','波尔图','里斯本','法鲁','塞维利亚','龙达','巴塞罗那'];
-    $('mapLegend').innerHTML = legendCities.map((k,i) =>
-      `<span><span class="dot" style="background:var(--c${i})"></span>${legendNames[i]}</span>`
-    ).join('');
   }
 
   /* ================= 倒计时：What's next（UTC 换算，跨时区不会错） ================= */
