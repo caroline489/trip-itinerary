@@ -8,8 +8,8 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="行程">
-<title>西葡行程 · 2026</title>
+<meta name="apple-mobile-web-app-title" content="Spain & Portugal">
+<title>Spain & Portugal · 2026</title>
 <style>
   :root{
     --paper: #F7F2E7;
@@ -533,11 +533,10 @@
 
     { id:'d13', date:'2026-10-04', wd:'周日', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
       items:[
-        {t:'上午', est:true, label:`${placeLink('蒂比达博 (Tibidabo)',{q:'Tibidabo Barcelona'})}`},
-        {t:'下午', est:true, label:`${placeLink('奎尔公园 (Park Güell)',{q:'Park Güell'})}`, id:'ticket-park-guell'}
+        {t:'上午', est:true, label:`${placeLink('蒂比达博 (Tibidabo)',{q:'Tibidabo Barcelona'})}`}
       ],
       overnightId:'hotel-barcelona', overnight:"Charles' Apartments（连住）",
-      stops:[{q:'Tibidabo Barcelona'},{q:'Park Güell'}] },
+      stops:[{q:'Tibidabo Barcelona'}] },
 
     { id:'d14', date:'2026-10-05', wd:'周一', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
       items:[
@@ -552,10 +551,12 @@
         {t:'08:45', label:`${placeLink('巴特罗之家 (Casa Batlló) · Be The First 清晨场（已订）',{q:'Casa Batlló'})}`},
         {t:'10:00', label:`${placeLink('米拉之家 (Casa Milà)',{q:'Casa Milà'})}`, book:true, id:'ticket-casa-mila'},
         {t:'下午', est:true, label:`${placeLink('哥特区 (Gothic Quarter)',{q:'Barri Gòtic Barcelona'})} / 兰布拉大道 (La Rambla)`},
+        {t:'下午', est:true, label:`${placeLink('奎尔公园 (Park Güell)',{q:'Park Güell'})}`, id:'ticket-park-guell'},
+        {t:'傍晚', est:true, label:`${placeLink('焦糖山 MUHBA Turó de la Rovira',{q:'MUHBA Turó de la Rovira Barcelona'})}〔日落观景点，具体是哪天去还没定〕`},
         {t:'', est:true, label:`加泰罗尼亚国家艺术博物馆 (MNAC)〔待订〕`, id:'ticket-mnac'}
       ],
       overnightId:'hotel-barcelona', overnight:"Charles' Apartments（连住）",
-      stops:[{q:'Casa Batlló'},{q:'Casa Milà'},{q:'Barri Gòtic Barcelona'}] },
+      stops:[{q:'Casa Batlló'},{q:'Casa Milà'},{q:'Barri Gòtic Barcelona'},{q:'Park Güell'},{q:'MUHBA Turó de la Rovira Barcelona'}] },
 
     { id:'d16', date:'2026-10-07', wd:'周三', city:'巴塞罗那 → 回程', color:CITY_COLOR.barcelona,
       items:[
@@ -642,11 +643,12 @@
         const item = flexRegistry[id];
         if(!item) return;
         const dayOptions = days.map(d => `<option value="${d.id}" ${d.id===dayId?'selected':''}>${dayLabel(d.id)}</option>`).join('');
+        const labelHtml = item.label.includes('<a ') ? item.label : (item.q ? placeLink(item.label, {q:item.q}) : item.label);
         html += `
           <div class="flex-card" data-flex-id="${id}">
             <div class="flex-card-main">
               <input type="text" class="flex-time-input" data-flex-time-id="${id}" value="${escapeAttr(item.t)}" placeholder="时间">
-              <span class="flex-label">${item.label}</span>
+              <span class="flex-label">${labelHtml}</span>
             </div>
             <div class="flex-card-controls">
               <button class="flex-btn flex-confirm" data-act="confirm" title="确认插入当天时间线">✓ 确认</button>
@@ -730,6 +732,8 @@
         <input type="text" id="addFlexTime" placeholder="例如 下午 / 14:00">
         <label class="field-label" style="margin-top:10px;">地点 / 内容</label>
         <input type="text" id="addFlexLabel" placeholder="例如 焦糖布丁山 Turó de la Rovira">
+        <label class="field-label" style="margin-top:10px;">地图搜索关键字（可留空，留空则用上面的名称去搜）</label>
+        <input type="text" id="addFlexQuery" placeholder="例如 Turó de la Rovira Barcelona">
         <div class="modal-actions">
           <button class="btn btn-ghost" id="addFlexCancel">取消</button>
           <button class="btn btn-primary" id="addFlexOk">添加</button>
@@ -743,9 +747,10 @@
     document.getElementById('addFlexOk').addEventListener('click', () => {
       const label = document.getElementById('addFlexLabel').value.trim();
       const t = document.getElementById('addFlexTime').value.trim();
+      const q = document.getElementById('addFlexQuery').value.trim() || label;
       if(!label){ document.getElementById('addFlexLabel').focus(); return; }
       const id = `flex-custom-${Date.now()}`;
-      flexRegistry[id] = { label, t };
+      flexRegistry[id] = { label, t, q };
       flexOrder[dayId] = flexOrder[dayId] || [];
       flexOrder[dayId].push(id);
       queueSaveTodo();
