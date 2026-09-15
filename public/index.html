@@ -74,25 +74,24 @@
   /* ---------- Map ---------- */
   .map-card{ padding:8px; overflow:hidden; }
   svg#routeMap{ width:100%; height:auto; display:block; }
-  .map-legend{ display:flex; flex-wrap:wrap; gap:8px 14px; padding:12px 8px 2px; margin-top:8px; border-top:1px dashed var(--line); font-size:12px; color:var(--ink-soft); }
-  .map-legend .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
   .city-label{ font-family: var(--font-sans); font-size:11px; fill: var(--ink); }
   .city-en{ font-size:8.5px; fill: var(--ink-soft); }
 
   /* ---------- Calendar ---------- */
   .cal-wrap{ padding:14px 8px 4px; }
   .cal-month-title{ font-family:var(--font-serif); font-weight:700; font-size:14px; color:var(--teal-deep); margin-bottom:8px; }
-  .cal-week-row, .cal-days{ display:grid; grid-template-columns: repeat(7,1fr); gap:3px; }
-  .cal-week-row span{ font-size:10px; color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+  .cal-week-row, .cal-days{ display:grid; grid-template-columns: repeat(7,1fr); gap:4px; }
+  .cal-week-row span{ font-size:11px; color:var(--ink-soft); text-align:center; padding-bottom:4px; }
   .cal-cell{
-    aspect-ratio:1; border-radius:6px; border:1px solid var(--line-soft);
+    aspect-ratio:0.8; border-radius:7px; border:1px solid var(--line-soft);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    font-size:11px; color:var(--ink); position:relative; gap:2px;
+    font-size:11px; color:var(--ink); position:relative; gap:2px; padding:3px 2px;
   }
   .cal-cell.empty{ border:none; }
   .cal-cell.cal-transit{ background: repeating-linear-gradient(45deg, var(--line-soft), var(--line-soft) 3px, var(--paper-raised) 3px, var(--paper-raised) 6px); }
-  .cal-daynum{ font-family:var(--font-mono); font-size:10.5px; }
-  .cal-city-dot{ width:6px; height:6px; border-radius:50%; }
+  .cal-daynum{ font-family:var(--font-mono); font-size:13px; font-weight:600; }
+  .cal-city-label{ font-size:11px; font-weight:700; line-height:1.15; text-align:center; word-break:break-all; }
+  .cal-icon{ position:absolute; top:1px; right:2px; font-size:13px; line-height:1; }
 
   /* ---------- Confirmed bookings ---------- */
   .booking-item{ border-left:3px solid var(--line); padding:8px 0 8px 12px; margin-bottom:6px; }
@@ -167,16 +166,17 @@
     padding:2px 6px; width:64px; flex:0 0 auto;
   }
   .flex-time-input:focus{ border-style:solid; border-color:var(--gold); color:var(--ink); outline:none; }
-  .flex-card-controls{ display:flex; align-items:center; gap:4px; justify-content:flex-end; }
+  .flex-card-controls{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
   .flex-btn{
     border:1px solid var(--line); background:var(--paper); color:var(--ink-soft); cursor:pointer;
-    width:26px; height:26px; border-radius:6px; font-size:11px; line-height:1;
+    width:36px; height:36px; border-radius:8px; font-size:15px; line-height:1;
   }
   .flex-btn:disabled{ opacity:0.3; cursor:default; }
   .flex-btn.flex-del{ color:var(--owe); border-color:var(--owe); }
+  .flex-btn.flex-confirm{ color:#fff; background:var(--owed); border-color:var(--owed); width:auto; padding:0 12px; font-size:13px; font-weight:600; }
   .flex-move{
-    font-size:11px; border:1px solid var(--line); border-radius:6px; padding:4px 4px;
-    background:var(--paper); color:var(--ink-soft); max-width:92px;
+    font-size:13px; border:1px solid var(--line); border-radius:8px; padding:8px 6px;
+    background:var(--paper); color:var(--ink-soft); max-width:110px; height:36px;
   }
   .flex-add-btn{
     display:block; width:100%; border:1px dashed var(--line); background:transparent;
@@ -340,7 +340,7 @@
         dep:'22:50　巴塞罗那 El Prat 机场 T1', arr:'06:15　多哈 Hamad 机场（+1 天，10/8）',
         meta:'飞行 6 小时 25 分 · 中转前往香港' },
       { code:'QR816　卡达航空', route:'多哈 DOH → 香港 HKG', date:'2026-10-08（周四）',
-        dep:'09:00　多哈 Hamad 机场', arr:'21:55　香港国际机场 T1', meta:'飞行 7 小时 55 分' }
+        dep:'10:30　多哈 Hamad 机场', arr:'23:25　香港国际机场 T1', meta:'飞行 7 小时 55 分' }
     ],
     car: [
       { title:'接机：马德里机场 → 酒店', when:'2026-09-22　约 09:30–10:15（航班 09:15 落地后）', meta:'舒适5座 · 可载4人 2件行李' },
@@ -360,16 +360,16 @@
         addr:'R. Serpa Pinto 37, 8000-431 Faro, Portugal', phone:'+351 966 212 308' },
       { id:'hotel-sevilla', city:'塞维利亚', name:'Hotel Sevilla Center（塞维利亚中心酒店）', dates:'10/1 – 10/2（1晚）',
         addr:'Av. de la Buhaira, 24, 41018 Sevilla, Spain', phone:'+34 954 54 95 00' },
-      { id:'hotel-ronda', city:'龙达', name:'Hotel Ronda Moments（伦达时刻酒店）⚠️', dates:'10/2 – 10/3（1晚）',
+      { id:'hotel-ronda', city:'龙达', name:'Hotel Ronda Moments（伦达时刻酒店）', dates:'10/2 – 10/3（1晚）',
         addr:'Partida los Morales, 28, 29400 Ronda, Málaga, Spain', phone:'+34 665 82 78 62',
         warn:'城外独立小屋型民宿，距龙达老城约10–15分钟车程，无前台、需用 WhatsApp 领取门禁密码，建议提前确认入住流程' },
       { id:'hotel-barcelona', city:'巴塞罗那', name:"Charles' Apartments in Barcelona（Airbnb，房东 Carlos）", dates:'10/3 – 10/7（4晚）',
         addr:'Avinguda de la República Argentina, 5, Barcelona, Spain', phone:'（Airbnb 站内联系房东 Carlos）' }
     ],
     tickets: [
-      { title:'阿尔罕布拉宫 Alhambra', when:'2026-10-03　15:30 入场', meta:'纳塞瑞斯皇宫 Nasrid Palaces 时段已确认就是15:30，一入场直接先去；当天仍需赶19:30航班，详见当日行程提醒' },
+      { title:'阿尔罕布拉宫 Alhambra', when:'2026-10-03　15:30 入场（含纳塞瑞斯皇宫）', meta:'当天紧接着赶19:30航班，详见当日行程' },
       { title:'圣家堂 Sagrada Família', when:'2026-10-05　12:45 入场', meta:'含塔楼 Tower 13:30' },
-      { title:"巴特罗之家 Casa Batlló · Be The First（清晨场）", when:'2026-10-06　08:45 入场', meta:'成人2张 · €90.00 · 比一般9:00开放更早，人少，但当天不能睡懒觉' }
+      { title:"巴特罗之家 Casa Batlló · Be The First（清晨场）", when:'2026-10-06　08:45 入场', meta:'成人2张 · €90.00 · 比一般9:00开放更早，人少' }
     ]
   };
 
@@ -511,18 +511,18 @@
         {t:'', est:true, label:`${placeLink('斗牛广场 (Plaza de Toros)',{q:'Plaza de Toros Ronda'})}`},
         {t:'傍晚', est:true, label:`${placeLink('龙达新桥 (Puente Nuevo)',{q:'Puente Nuevo Ronda'})} / 峡谷 (El Tajo Gorge)`}
       ],
-      overnightId:'hotel-ronda', overnight:'Hotel Ronda Moments ⚠️见上方入住提醒',
+      overnightId:'hotel-ronda', overnight:'Hotel Ronda Moments',
       stops:[{q:'Seville Cathedral'},{q:'Metropol Parasol Sevilla'},{q:'Plaza de Toros Ronda'},{q:'Puente Nuevo Ronda'}] },
 
     { id:'d12', date:'2026-10-03', wd:'周六', city:'龙达 → 格拉纳达 → 巴塞罗那', color:CITY_COLOR.barcelona,
-      warn:'纳塞瑞斯皇宫 (Nasrid Palaces) 时段已确认就是15:30，一入场可直接先进纳塞瑞斯皇宫，风险比原本预期的低，但离场后仍要赶19:30航班，建议按下方节奏走，别临时加行程',
+      warn:'纳塞瑞斯皇宫 (Nasrid Palaces) 时段确认就是15:30，一入场可直接先进去；离场后仍要赶19:30航班，建议按下方节奏走，别临时加行程',
       items:[
         {t:'08:30', est:true, label:'退房，包车离开龙达（车程约2小时）'},
         {t:'约11:00', est:true, label:'抵达格拉纳达，行李留车上'},
         {t:'11:00-12:30', est:true, label:`${placeLink('阿尔拜辛区 (Albaicín)',{q:'Albaicín Granada'})} / ${placeLink('圣尼古拉斯观景台',{q:'Mirador San Nicolás Granada'})}`},
         {t:'12:30-13:30', est:true, label:'午餐'},
         {t:'13:30-15:15', est:true, label:'自由活动 / 提前到阿尔罕布拉宫周边'},
-        {t:'15:30', label:`${placeLink('阿尔罕布拉宫 (Alhambra)',{q:'Alhambra Granada'})} 入场（已订）· 纳塞瑞斯皇宫时段确认就是15:30，一进场先去这里`},
+        {t:'15:30', label:`${placeLink('阿尔罕布拉宫 (Alhambra)',{q:'Alhambra Granada'})} 入场（已订）· 优先进纳塞瑞斯皇宫`},
         {t:'最晚17:45', est:true, label:'务必离场，包车在出口（Puerta de la Justicia 附近）等，一下场就上车'},
         {t:'约18:15-18:30', est:true, label:'抵达格拉纳达机场'},
         {t:'19:30', label:'VY2015 格拉纳达 → 巴塞罗那 起飞'},
@@ -534,7 +534,7 @@
     { id:'d13', date:'2026-10-04', wd:'周日', city:'巴塞罗那 Barcelona', color:CITY_COLOR.barcelona,
       items:[
         {t:'上午', est:true, label:`${placeLink('蒂比达博 (Tibidabo)',{q:'Tibidabo Barcelona'})}`},
-        {t:'下午', est:true, label:`${placeLink('奎尔公园 (Park Güell)',{q:'Park Güell'})}`, book:true, id:'ticket-park-guell'}
+        {t:'下午', est:true, label:`${placeLink('奎尔公园 (Park Güell)',{q:'Park Güell'})}`, id:'ticket-park-guell'}
       ],
       overnightId:'hotel-barcelona', overnight:"Charles' Apartments（连住）",
       stops:[{q:'Tibidabo Barcelona'},{q:'Park Güell'}] },
@@ -569,8 +569,8 @@
     { id:'d17', date:'2026-10-08', wd:'周四', city:'多哈 → 香港', color:CITY_COLOR.barcelona,
       items:[
         {t:'06:15', label:'抵达多哈 Hamad 机场'},
-        {t:'09:00', label:'QR816 多哈 → 香港 起飞'},
-        {t:'21:55', label:'抵达香港，行程结束'}
+        {t:'10:30', label:'QR816 多哈 → 香港 起飞'},
+        {t:'23:25', label:'抵达香港，行程结束'}
       ],
       overnight:'—',
       stops:[] }
@@ -581,7 +581,36 @@
      固定时间的项目维持原样、不能动，避免跟实际订票状态脱节。 */
   const flexRegistry = {}; // { id: { label, t } }
   const flexOrder = {};    // { dayId: [id, id, ...] }
+  const confirmedFlex = {}; // { dayId: [ {id, t, label}, ... ] } —— 已确认插入固定时间线的灵活活动
   let flexSeq = 0;
+
+  function timeSortKey(t){
+    if(!t) return 720;
+    const hhmm = t.match(/(\d{1,2}):(\d{2})/);
+    if(hhmm) return parseInt(hhmm[1],10)*60 + parseInt(hhmm[2],10);
+    if(t.includes('凌晨')) return 60;
+    if(t.includes('全天') || t.includes('早出发') || t.includes('清晨')) return 480;
+    if(t.includes('上午')) return 540;
+    if(t.includes('中午')) return 720;
+    if(t.includes('下午') || t.includes('午后')) return 840;
+    if(t.includes('傍晚')) return 1080;
+    if(t.includes('晚上') || t.includes('夜')) return 1200;
+    if(t.includes('最晚')) return 1065;
+    return 720;
+  }
+
+  function applyConfirmedFlexOverlay(){
+    Object.entries(confirmedFlex).forEach(([dayId, list]) => {
+      const day = days.find(x => x.id === dayId);
+      if(!day) return;
+      list.forEach(entry => {
+        if(!day.items.some(it => it.id === entry.id)){
+          day.items.push({ t:entry.t, label:entry.label, est:true, id:entry.id });
+        }
+      });
+      day.items.sort((a,b) => timeSortKey(a.t) - timeSortKey(b.t));
+    });
+  }
 
   function extractFlexItems(){
     days.forEach(d => {
@@ -620,6 +649,7 @@
               <span class="flex-label">${item.label}</span>
             </div>
             <div class="flex-card-controls">
+              <button class="flex-btn flex-confirm" data-act="confirm" title="确认插入当天时间线">✓ 确认</button>
               <button class="flex-btn" data-act="up" ${idx===0?'disabled':''} title="往前移">▲</button>
               <button class="flex-btn" data-act="down" ${idx===ids.length-1?'disabled':''} title="往后移">▼</button>
               <select class="flex-move" data-act="move">${dayOptions}</select>
@@ -652,6 +682,21 @@
         if(act === 'up' && i > 0){ [arr[i-1],arr[i]] = [arr[i],arr[i-1]]; }
         if(act === 'down' && i < arr.length-1){ [arr[i+1],arr[i]] = [arr[i],arr[i+1]]; }
         if(act === 'del'){ arr.splice(i,1); delete flexRegistry[id]; }
+        if(act === 'confirm'){
+          const item = flexRegistry[id];
+          if(item){
+            if(!item.t.trim()){
+              alert('确认插入时间线前，麻烦先填一个具体时间（比如 09:00），这样才能排到正确的位置。');
+              return;
+            }
+            arr.splice(i,1); delete flexRegistry[id];
+            const day = days.find(x => x.id === dayId);
+            day.items.push({ t:item.t, label:item.label, est:true, id });
+            day.items.sort((a,b) => timeSortKey(a.t) - timeSortKey(b.t));
+            confirmedFlex[dayId] = confirmedFlex[dayId] || [];
+            confirmedFlex[dayId].push({ id, t:item.t, label:item.label });
+          }
+        }
         queueSaveTodo();
         renderDayBody(days.find(x => x.id === dayId));
       });
@@ -821,6 +866,12 @@
       const it = (d.items||[]).find(x => x.id === id);
       if(it) return {day:d, item:it};
     }
+    // 也找目前还在「灵活活动」区块里的（比如还没确认成固定时间线的项目）
+    for(const dayId of Object.keys(flexOrder)){
+      if((flexOrder[dayId]||[]).includes(id) && flexRegistry[id]){
+        return { day: days.find(x => x.id === dayId), item: flexRegistry[id] };
+      }
+    }
     return null;
   }
 
@@ -936,7 +987,7 @@
 
   function applyLoadedPayload(payload){
     if(!payload) return;
-    // 新格式 { todo:{...}, notes:{...}, flexOrder:{...}, flexRegistry:{...} }；兼容旧的纯 todoState 格式
+    // 新格式 { todo:{...}, notes:{...}, flexOrder:{...}, flexRegistry:{...}, confirmedFlex:{...} }；兼容旧的纯 todoState 格式
     const todoPart = payload.todo || payload;
     const notesPart = payload.notes || {};
     Object.assign(todoState, todoPart);
@@ -947,6 +998,11 @@
       Object.assign(flexOrder, payload.flexOrder);
       Object.keys(flexRegistry).forEach(k => delete flexRegistry[k]);
       Object.assign(flexRegistry, payload.flexRegistry);
+    }
+    if(payload.confirmedFlex){
+      Object.keys(confirmedFlex).forEach(k => delete confirmedFlex[k]);
+      Object.assign(confirmedFlex, payload.confirmedFlex);
+      applyConfirmedFlexOverlay();
     }
     Object.entries(todoState).forEach(([target, s]) => { if(s.done) applyConfirmed(target, s.info); });
   }
@@ -976,7 +1032,7 @@
   function queueSaveTodo(){
     clearTimeout(todoSaveTimer);
     todoSaveTimer = setTimeout(async () => {
-      const json = JSON.stringify({ todo: todoState, notes: notesState, flexOrder, flexRegistry });
+      const json = JSON.stringify({ todo: todoState, notes: notesState, flexOrder, flexRegistry, confirmedFlex });
       try{ localStorage.setItem(TODO_LOCAL_KEY, json); }catch(err){}
       try{
         await fetch(TODO_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body: json });
@@ -1011,6 +1067,12 @@
     '2026-10-03':'barcelona', '2026-10-04':'barcelona', '2026-10-05':'barcelona', '2026-10-06':'barcelona',
     '2026-10-07':'transit'
   };
+  const CITY_FULL = {
+    madrid:'马德里', salamanca:'萨拉曼卡', porto:'波尔图', lisbon:'里斯本',
+    faro:'法鲁', sevilla:'塞维利亚', ronda:'龙达', barcelona:'巴塞罗那'
+  };
+  const SPECIAL_ICON = { '2026-09-21':'🛫', '2026-10-08':'🏠' };
+
   function buildCalendar(){
     const weekLabels = ['日','一','二','三','四','五','六'];
     const start = new Date(2026, 8, 20); // 9/20（周日）
@@ -1023,21 +1085,17 @@
       const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const night = nightsMap[dateStr];
       const dayLabel = day === 1 ? `${m}/${day}` : day; // 每月1号标出月份避免歧义
+      const icon = SPECIAL_ICON[dateStr] ? `<span class="cal-icon">${SPECIAL_ICON[dateStr]}</span>` : '';
       if(night === 'transit'){
-        html += `<div class="cal-cell cal-transit"><span class="cal-daynum">${dayLabel}</span>✈️</div>`;
+        html += `<div class="cal-cell cal-transit">${icon}<span class="cal-daynum">${dayLabel}</span><span class="cal-city-label">转机</span></div>`;
       } else if(night){
         html += `<div class="cal-cell" style="background:color-mix(in srgb, ${CITY_COLOR[night]} 22%, var(--paper-raised)); border-color:${CITY_COLOR[night]}">
-          <span class="cal-daynum">${dayLabel}</span><span class="cal-city-dot" style="background:${CITY_COLOR[night]}"></span></div>`;
+          ${icon}<span class="cal-daynum">${dayLabel}</span><span class="cal-city-label" style="color:${CITY_COLOR[night]}">${CITY_FULL[night]}</span></div>`;
       } else {
-        html += `<div class="cal-cell"><span class="cal-daynum">${dayLabel}</span></div>`;
+        html += `<div class="cal-cell">${icon}<span class="cal-daynum">${dayLabel}</span></div>`;
       }
     }
     html += `</div>`;
-    const legendCities = ['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'];
-    const legendNames = ['马德里','萨拉曼卡','波尔图','里斯本','法鲁','塞维利亚','龙达','巴塞罗那'];
-    html += `<div class="map-legend">${legendCities.map((k,i) =>
-      `<span><span class="dot" style="background:var(--c${i})"></span>${legendNames[i]}</span>`
-    ).join('')}</div>`;
     $('calMount').innerHTML = html;
   }
 
@@ -1130,8 +1188,8 @@
     { label:'圣家堂 (Sagrada Família) 入场', iso:'2026-10-05T12:45:00+02:00' },
     { label:'包车送机（巴塞罗那）', iso:'2026-10-07T19:50:00+02:00' },
     { label:'QR142 巴塞罗那 → 多哈 起飞', iso:'2026-10-07T22:50:00+02:00' },
-    { label:'QR816 多哈 → 香港 起飞', iso:'2026-10-08T09:00:00+03:00' },
-    { label:'QR816 抵达香港', iso:'2026-10-08T21:55:00+08:00' }
+    { label:'QR816 多哈 → 香港 起飞', iso:'2026-10-08T10:30:00+03:00' },
+    { label:'QR816 抵达香港', iso:'2026-10-08T23:25:00+08:00' }
   ];
 
   function updateCountdown(){
