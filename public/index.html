@@ -1386,7 +1386,7 @@
     const city = cityKey && CITY_COORDS[cityKey];
     if(!city){
       g.style.display = 'none';
-      $('liveLocationNote').textContent = cityKey ? '' : '行程还没开始，或已经结束';
+      $('liveLocationNote').textContent = '';
       return;
     }
     g.style.display = 'block';

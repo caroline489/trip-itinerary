@@ -1,4 +1,4 @@
-const CACHE = 'trip-itinerary-v3';
+const CACHE = 'trip-itinerary-v4';
 const SHELL = [
   '/', '/index.html', '/manifest.json',
   '/icons/apple-touch-icon.png', '/icons/icon-192.png', '/icons/icon-512.png'
@@ -37,6 +37,26 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.pathname.startsWith('/api/')) return; // 不快取 API，离线时让它自然失败，改用 localStorage
 
+  // 网页本身（导航请求）一律先打服务器，确保永远看到最新内容；
+  // 只有网络真的连不上时才退回快取
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE).then((c) => c.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(event.request).then((cached) => cached || new Response(OFFLINE_HTML, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }))
+        )
+    );
+    return;
+  }
+
+  // 其他静态资源（图示、manifest 等）维持快取优先，图个速度
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request)
@@ -47,15 +67,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => {
-          if (cached) return cached;
-          // 完全没有快取、网络又失败时（比如第一次打开就没信号），
-          // 给个友善的离线提示，而不是浏览器原生的报错页
-          if (event.request.mode === 'navigate') {
-            return new Response(OFFLINE_HTML, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
-          }
-          return Response.error();
-        });
+        .catch(() => cached || Response.error());
       return cached || fetchPromise;
     })
   );
