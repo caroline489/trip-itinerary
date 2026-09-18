@@ -84,10 +84,6 @@
     100%{ rx:15; ry:6; opacity:0; }
   }
   .live-loc-controls{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 8px 0; }
-  .sim-select{
-    border:1px solid var(--line); background:var(--paper-raised); color:var(--ink-soft);
-    border-radius:999px; padding:7px 10px; font-size:12.5px; font-family:var(--font-sans);
-  }
   .live-loc-note{ font-size:11.5px; color:var(--ink-soft); }
   svg#routeMap{ width:100%; height:auto; display:block; }
   .city-label{
@@ -281,17 +277,6 @@
     <div class="card map-card">
       <div id="mapMount"></div>
       <div class="live-loc-controls">
-        <select class="sim-select" id="simSelect">
-          <option value="">🧪 预览：模拟今天在哪个城市…</option>
-          <option value="madrid">马德里</option>
-          <option value="salamanca">萨拉曼卡</option>
-          <option value="porto">波尔图</option>
-          <option value="lisbon">里斯本</option>
-          <option value="faro">法鲁</option>
-          <option value="sevilla">塞维利亚</option>
-          <option value="ronda">龙达</option>
-          <option value="barcelona">巴塞罗那</option>
-        </select>
         <span class="live-loc-note" id="liveLocationNote"></span>
       </div>
       <div class="cal-wrap" id="calMount"></div>
@@ -1368,7 +1353,7 @@
         </g>
       </svg>`;
     $('mapMount').innerHTML = svg;
-    positionCurrentPin(currentSimOverride || getCurrentCityKey());
+    positionCurrentPin(getCurrentCityKey());
   }
 
   /* ================= 「你现在在哪」：按日期自动判断，不需要定位权限 ================= */
@@ -1393,12 +1378,6 @@
     // 图钉画在城市点位右上方，尖端朝下指向城市，不挡住地标小图或城市名
     g.setAttribute('transform', `translate(${city.x + 15}, ${city.y - 16})`);
     $('liveLocationNote').textContent = `📍 今天在：${city.name}`;
-  }
-
-  let currentSimOverride = null;
-  function simulateLocation(cityKey){
-    currentSimOverride = cityKey || null;
-    positionCurrentPin(currentSimOverride || getCurrentCityKey());
   }
 
   /* ================= 倒计时：What's next（UTC 换算，跨时区不会错） ================= */
@@ -1451,7 +1430,6 @@
   renderPrep();
   renderTips();
   buildMap();
-  $('simSelect').addEventListener('change', (e) => simulateLocation(e.target.value));
   buildCalendar();
   updateCountdown();
   setInterval(updateCountdown, 30000);
