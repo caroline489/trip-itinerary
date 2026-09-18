@@ -32,12 +32,13 @@
     /* 每段行程一个颜色，用于地图路线与当日城市标签 */
     --c0:#B5651D; --c1:#3F6E8C; --c2:#6B8E4E; --c3:#A85B7C;
     --c4:#2F8577; --c5:#C79A3B; --c6:#5B5A8C; --c7:#B4534A;
+    --river: #6E9AB8;
     transition: background .4s, color .4s;
   }
   html.night{
     --paper:#1B2320; --paper-raised:#232E2A; --ink:#EDE7DA; --ink-soft:#B7AE9C;
     --line:#3A453F; --line-soft:#2C3630; --teal:#7FBDAE; --teal-deep:#A9D8C9;
-    --gold:#E0B25C; --owe:#E08B7D; --owed:#8FD1AE;
+    --gold:#E0B25C; --owe:#E08B7D; --owed:#8FD1AE; --river:#5E86A3;
   }
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html,body{ margin:0; padding:0; }
@@ -73,9 +74,30 @@
 
   /* ---------- Map ---------- */
   .map-card{ padding:8px; overflow:hidden; }
+  .pin-pulse{
+    fill: var(--owe); opacity:0.5;
+    animation: pinPulse 1.8s ease-out infinite;
+    transform-origin: center;
+  }
+  @keyframes pinPulse{
+    0%{ rx:3.5; ry:1.8; opacity:0.55; }
+    100%{ rx:15; ry:6; opacity:0; }
+  }
+  .live-loc-controls{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 8px 0; }
+  .sim-select{
+    border:1px solid var(--line); background:var(--paper-raised); color:var(--ink-soft);
+    border-radius:999px; padding:7px 10px; font-size:12.5px; font-family:var(--font-sans);
+  }
+  .live-loc-note{ font-size:11.5px; color:var(--ink-soft); }
   svg#routeMap{ width:100%; height:auto; display:block; }
-  .city-label{ font-family: var(--font-sans); font-size:11px; fill: var(--ink); }
-  .city-en{ font-size:8.5px; fill: var(--ink-soft); }
+  .city-label{
+    font-family: var(--font-sans); font-size:15px; font-weight:700; fill: var(--ink);
+    paint-order: stroke fill; stroke: var(--paper); stroke-width: 3.5px; stroke-linejoin: round;
+  }
+  .city-en{
+    font-size:11.5px; fill: var(--ink-soft);
+    paint-order: stroke fill; stroke: var(--paper); stroke-width: 3px; stroke-linejoin: round;
+  }
 
   /* ---------- Calendar ---------- */
   .cal-wrap{ padding:14px 8px 4px; }
@@ -258,6 +280,20 @@
     <h2>行程总览 <span class="en">Route overview</span></h2>
     <div class="card map-card">
       <div id="mapMount"></div>
+      <div class="live-loc-controls">
+        <select class="sim-select" id="simSelect">
+          <option value="">🧪 预览：模拟今天在哪个城市…</option>
+          <option value="madrid">马德里</option>
+          <option value="salamanca">萨拉曼卡</option>
+          <option value="porto">波尔图</option>
+          <option value="lisbon">里斯本</option>
+          <option value="faro">法鲁</option>
+          <option value="sevilla">塞维利亚</option>
+          <option value="ronda">龙达</option>
+          <option value="barcelona">巴塞罗那</option>
+        </select>
+        <span class="live-loc-note" id="liveLocationNote"></span>
+      </div>
       <div class="cal-wrap" id="calMount"></div>
     </div>
   </section>
@@ -1216,22 +1252,48 @@
   }
 
 
+  const CITY_COORDS = {
+    madrid:{name:'马德里', en:'Madrid', x:485, y:138, icon:'dome', dir:'right'},
+    toledo:{name:'托莱多', en:'Toledo', x:448, y:210, small:true, icon:'castle', dir:'left'},
+    segovia:{name:'塞哥维亚', en:'Segovia', x:453, y:94, small:true, icon:'castle', dir:'top'},
+    salamanca:{name:'萨拉曼卡', en:'Salamanca', x:338, y:93, icon:'dome', dir:'top'},
+    porto:{name:'波尔图', en:'Porto', x:117, y:78, icon:'bridge', dir:'left'},
+    sintra:{name:'辛特拉', en:'Sintra', x:38, y:222, small:true, icon:'castle', dir:'left'},
+    lisbon:{name:'里斯本', en:'Lisbon', x:77, y:272, icon:'tower', dir:'right'},
+    faro:{name:'法鲁', en:'Faro', x:168, y:408, icon:'house', dir:'left'},
+    sevilla:{name:'塞维利亚', en:'Sevilla', x:313, y:379, icon:'dome', dir:'top'},
+    ronda:{name:'龙达', en:'Ronda', x:375, y:431, icon:'bridge', dir:'left'},
+    granada:{name:'格拉纳达', en:'Granada', x:493, y:396, small:true, icon:'castle', dir:'right'},
+    barcelona:{name:'巴塞罗那', en:'Barcelona', x:660, y:88, icon:'spire', dir:'top'}
+  };
+  const OVERNIGHT_KEYS = ['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'];
+
+  // 简笔画风格的小地标图示——只是淡淡的一笔示意，不喧宾夺主
+  function iconOffset(dir){
+    if(dir === 'left') return { dx:-19, dy:-4 };
+    if(dir === 'right') return { dx:19, dy:-4 };
+    return { dx:0, dy:-18 }; // top（默认）
+  }
+
+  function landmarkIcon(type, x, y, dir){
+    if(!type) return '';
+    const { dx, dy } = iconOffset(dir);
+    const s = `stroke="var(--ink-soft)" stroke-width="1" fill="none" opacity="0.6" stroke-linecap="round" stroke-linejoin="round"`;
+    const t = `translate(${x + dx}, ${y + dy}) scale(1.8)`;
+    const shapes = {
+      castle: `<path d="M-6,6 L-6,-1 L-6,-3 L-4,-3 L-4,-1 L-2,-1 L-2,-3 L2,-3 L2,-1 L4,-1 L4,-3 L6,-3 L6,-1 L6,6 Z" ${s}/>`,
+      dome:   `<path d="M-4,5 C-4,1 -4,-4 0,-7 C4,-4 4,1 4,5 Z M0,-7 L0,-9" ${s}/>`,
+      bridge: `<path d="M-7,5 Q0,-5 7,5 M-4,5 L-4,1 M0,5 L0,-2 M4,5 L4,1" ${s}/>`,
+      spire:  `<path d="M-3,5 L-3,-2 L0,-8 L3,-2 L3,5 Z M-1.2,-8 L-1.2,-10 M1.2,-8 L1.2,-10" ${s}/>`,
+      tower:  `<path d="M-3,5 L-3,-4 L-2,-6 L2,-6 L3,-4 L3,5 Z M-1,-6 L-1,-8 M1,-6 L1,-8" ${s}/>`,
+      house:  `<path d="M-4,5 L-4,0 L0,-4 L4,0 L4,5 Z" ${s}/>`
+    };
+    return `<g transform="${t}">${shapes[type] || ''}</g>`;
+  }
+
   function buildMap(){
-    const cities = [
-      {key:'madrid', name:'马德里', en:'Madrid', x:485, y:138},
-      {key:'toledo', name:'托莱多', en:'Toledo', x:461, y:181, small:true},
-      {key:'segovia', name:'塞哥维亚', en:'Segovia', x:453, y:94, small:true},
-      {key:'salamanca', name:'萨拉曼卡', en:'Salamanca', x:338, y:93},
-      {key:'porto', name:'波尔图', en:'Porto', x:117, y:78},
-      {key:'sintra', name:'辛特拉', en:'Sintra', x:58, y:266, small:true},
-      {key:'lisbon', name:'里斯本', en:'Lisbon', x:77, y:272},
-      {key:'faro', name:'法鲁', en:'Faro', x:168, y:408},
-      {key:'sevilla', name:'塞维利亚', en:'Sevilla', x:313, y:379},
-      {key:'ronda', name:'龙达', en:'Ronda', x:375, y:431},
-      {key:'granada', name:'格拉纳达', en:'Granada', x:493, y:396, small:true},
-      {key:'barcelona', name:'巴塞罗那', en:'Barcelona', x:925, y:59}
-    ];
-    const cityByKey = Object.fromEntries(cities.map(c => [c.key, c]));
+    const cities = Object.entries(CITY_COORDS).map(([key, v]) => ({ key, ...v }));
+    const cityByKey = CITY_COORDS;
 
     // 手绘感：给直线加一点随机但固定的弯曲弧度
     function wobblyPath(a, b, seed){
@@ -1270,13 +1332,15 @@
     let markers = '';
     cities.forEach(c => {
       const r = c.small ? 3.5 : 5.5;
-      const overnight = ['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'].includes(c.key);
-      const color = `var(--c${['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'].indexOf(c.key) >= 0 ? ['madrid','salamanca','porto','lisbon','faro','sevilla','ronda','barcelona'].indexOf(c.key) : 0})`;
+      const overnight = OVERNIGHT_KEYS.includes(c.key);
+      const color = `var(--c${OVERNIGHT_KEYS.indexOf(c.key) >= 0 ? OVERNIGHT_KEYS.indexOf(c.key) : 0})`;
+      const off = iconOffset(c.dir);
       markers += `<a href="${navLink({q:c.en+' Spain Portugal'})}" target="_blank" rel="noopener">
+        <circle cx="${c.x + off.dx}" cy="${c.y + off.dy}" r="15" fill="var(--paper)" opacity="0.8"/>
+        ${landmarkIcon(c.icon, c.x, c.y, c.dir)}
         <circle cx="${c.x}" cy="${c.y}" r="${r}" fill="${color}" stroke="var(--paper)" stroke-width="1.5"/>
-        ${overnight ? `<text x="${c.x}" y="${c.y-9}" text-anchor="middle" class="city-label">🛏</text>` : ''}
-        <text x="${c.x}" y="${c.y+16}" text-anchor="middle" class="city-label">${c.name}</text>
-        <text x="${c.x}" y="${c.y+26}" text-anchor="middle" class="city-en">${c.en}</text>
+        <text x="${c.x}" y="${c.y+21}" text-anchor="middle" class="city-label">${c.name}</text>
+        <text x="${c.x}" y="${c.y+33}" text-anchor="middle" class="city-en">${c.en}</text>
       </a>`;
     });
 
@@ -1285,14 +1349,56 @@
       C 260,460 300,430 340,450 C 400,470 440,430 480,420 C 540,410 560,380 540,340
       C 520,300 480,280 470,230 C 460,170 480,120 450,80 C 400,30 320,20 260,40
       C 200,55 150,20 100,25 C 70,28 50,35 40,40 Z`;
+    // 巴塞罗那实际距离较远，画成一块单独的海岸小地块，构图更和谐、不用照实际距离画
+    const coast2 = `M615,45 C650,25 705,35 720,75 C732,105 715,145 680,155
+      C645,163 605,145 598,110 C592,80 585,60 615,45 Z`;
 
     const svg = `
-      <svg id="routeMap" viewBox="0 0 980 480" xmlns="http://www.w3.org/2000/svg">
-        <path d="${coast}" fill="var(--line-soft)" opacity="0.5" stroke="var(--line)" stroke-width="1.5"/>
+      <svg id="routeMap" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg">
+        <path d="${coast}" fill="var(--line-soft)" opacity="0.55" stroke="var(--line)" stroke-width="1.8"/>
+        <path d="${coast2}" fill="var(--line-soft)" opacity="0.55" stroke="var(--line)" stroke-width="1.8"/>
         ${paths}
         ${markers}
+        <g id="currentCityPin" style="display:none;">
+          <ellipse class="pin-pulse" cx="0" cy="0" rx="3.5" ry="1.8"/>
+          <ellipse cx="0" cy="0" rx="5" ry="2" fill="var(--ink)" opacity="0.15"/>
+          <path d="M0,0 C-1,-2 -9,-12 -9,-18.5 C-9,-24 -5,-28 0,-28 C5,-28 9,-24 9,-18.5 C9,-12 1,-2 0,0 Z"
+                fill="var(--owe)" stroke="var(--paper)" stroke-width="1.2"/>
+          <circle cx="0" cy="-18.5" r="3.8" fill="var(--paper)"/>
+        </g>
       </svg>`;
     $('mapMount').innerHTML = svg;
+    positionCurrentPin(currentSimOverride || getCurrentCityKey());
+  }
+
+  /* ================= 「你现在在哪」：按日期自动判断，不需要定位权限 ================= */
+  // 住宿城市是固定的，直接照日期对到 nightsMap 就知道当天在哪一座城市
+  function getCurrentCityKey(dateStr){
+    const today = dateStr || new Date().toISOString().slice(0,10);
+    const val = nightsMap[today];
+    if(!val || val === 'transit') return null;
+    return val;
+  }
+
+  function positionCurrentPin(cityKey){
+    const g = document.getElementById('currentCityPin');
+    if(!g) return;
+    const city = cityKey && CITY_COORDS[cityKey];
+    if(!city){
+      g.style.display = 'none';
+      $('liveLocationNote').textContent = cityKey ? '' : '行程还没开始，或已经结束';
+      return;
+    }
+    g.style.display = 'block';
+    // 图钉画在城市点位右上方，尖端朝下指向城市，不挡住地标小图或城市名
+    g.setAttribute('transform', `translate(${city.x + 15}, ${city.y - 16})`);
+    $('liveLocationNote').textContent = `📍 今天在：${city.name}`;
+  }
+
+  let currentSimOverride = null;
+  function simulateLocation(cityKey){
+    currentSimOverride = cityKey || null;
+    positionCurrentPin(currentSimOverride || getCurrentCityKey());
   }
 
   /* ================= 倒计时：What's next（UTC 换算，跨时区不会错） ================= */
@@ -1345,6 +1451,7 @@
   renderPrep();
   renderTips();
   buildMap();
+  $('simSelect').addEventListener('change', (e) => simulateLocation(e.target.value));
   buildCalendar();
   updateCountdown();
   setInterval(updateCountdown, 30000);
