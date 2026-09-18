@@ -119,6 +119,12 @@
   .booking-item .b-meta{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; line-height:1.6; }
   .booking-item .b-meta a{ text-decoration:none; }
   .subhead{ font-size:13px; color:var(--ink-soft); margin:16px 0 8px; font-weight:600; }
+  .docs-link{
+    display:block; text-align:center; background:var(--paper); border:1px dashed var(--line);
+    border-radius:8px; padding:10px; margin-bottom:14px; font-size:13px; font-weight:600;
+    color:var(--teal-deep); text-decoration:none;
+  }
+  .docs-link:active{ border-color:var(--teal); }
   .subhead:first-child{ margin-top:0; }
 
   /* ---------- Day by day ---------- */
@@ -420,6 +426,7 @@
     });
     html += '<div class="subhead">酒店 Hotels <span class="en">详见对应日期</span></div>';
     html += '<div class="hotel-jump-note">每晚住宿的地址、电话已经放进「逐日行程」对应那天里，不在这里重复列了。</div>';
+    html += `<a href="https://www.icloud.com/iclouddrive/076dForskYrAtfygqdGFM9bcQ#Tickets" target="_blank" rel="noopener" class="docs-link">📁 所有门票原件（iCloud 共享文件夹）</a>`;
     html += '<div class="subhead">门票 Tickets</div>';
     bookings.tickets.forEach(t => {
       html += `<div class="booking-item"><div class="b-title">${t.title}</div>
